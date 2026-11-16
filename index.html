@@ -693,7 +693,7 @@ main.app{height:calc(100vh - 42px - var(--rh,62px))!important}
   <div id="stage"><svg id="svg"></svg>
     <div class="parts ov" id="parts">
         <span class="plbl">弁類</span><button data-p="gate">仕切弁</button><button data-p="globe">玉形弁</button><button data-p="ball">ボール弁</button>
-        <button data-p="bfly">バタフライ弁</button><button data-p="check">逆止弁</button><button data-p="strainer">ストレーナ</button><span class="plbl">フレキ</span><button data-p="flex" data-ser="sk10">トーゼンフレックス</button><button data-p="flex" data-ser="tough">タフボーイ</button><button data-p="flex" data-ser="toughlex">タフレックス</button><button data-p="flex" data-ser="tfx">テクノフレックス(L指定)</button>
+        <button data-p="bfly">バタフライ弁</button><button data-p="check">チャッキ</button><button data-p="wcheck">ウイングチャッキ</button><button data-p="strainer">ストレーナ</button><span class="plbl">フレキ</span><button data-p="flex" data-ser="sk10">トーゼンフレックス</button><button data-p="flex" data-ser="tough">タフボーイ</button><button data-p="flex" data-ser="toughlex">タフレックス</button><button data-p="flex" data-ser="tfx">テクノフレックス(L指定)</button>
         <span class="plbl">継手</span><button data-p="fitL">L（エルボ）</button><button data-p="fitT">T（チーズ）</button><button data-p="flange">フランジ</button><button data-p="union">ユニオン</button><button data-p="reducer">レジューサ</button><button data-p="socket">ソケット</button><button data-p="cap">キャップ</button><button data-p="plug">プラグ</button>
         <span class="plbl" style="flex-basis:100%">エルボ・T・クロスは自動（曲げる＝エルボ／途中の点から線を引く＝T）</span>
       </div>
@@ -771,7 +771,7 @@ function dirLab(k){if(k==="U")return "↑ 上へ";if(k==="D")return "↓ 下へ"
 const SV={};function computeSV(){for(const k in DIRS){const d=DIRS[k],p=proj(d[0],d[1],d[2]),l=Math.hypot(p[0],p[1]);SV[k]=[p[0]/l,p[1]/l];}if(window.upd45)upd45();}computeSV();
 
 /* ===== 部品 ===== */
-const PARTS={gate:["仕切弁","GV"],globe:["玉形弁","GLV"],ball:["ボール弁","BaV"],bfly:["バタフライ弁","BV"],check:["逆止弁","CV"],strainer:["ストレーナ","ST"],flex:["フレキ","FX"],flange:["フランジ","FL"],union:["ユニオン","U"],socket:["ソケット","SK"],reducer:["レジューサ","R"],cap:["キャップ","CAP"],plug:["プラグ","PL"]};
+const PARTS={gate:["仕切弁","GV"],globe:["玉形弁","GLV"],ball:["ボール弁","BaV"],bfly:["バタフライ弁","BV"],check:["チャッキ（逆止弁）","CV"],wcheck:["ウイングチャッキ","WCV"],strainer:["ストレーナ","ST"],flex:["フレキ","FX"],flange:["フランジ","FL"],union:["ユニオン","U"],socket:["ソケット","SK"],reducer:["レジューサ","R"],cap:["キャップ","CAP"],plug:["プラグ","PL"]};
 // バルブ面間 L（mm）既定値：主要メーカーカタログ値（出典は根拠欄）。conn: th=ねじ込み, fl=フランジ10K, wf=ウェハー
 const VF={
   gate:{fl:{15:75,20:80,25:95,32:110,40:120,50:140,65:165,80:190,100:230,125:250,150:270,200:290,250:330,300:350}, th:{15:55,20:65,25:70,32:80,40:90,50:100}},
@@ -779,13 +779,14 @@ const VF={
   ball:{fl:{15:110,20:120,25:130,32:140,40:165,50:180,65:190,80:200,100:230,125:300,150:340,200:450}},
   bfly:{wf:{50:43,65:46,80:46,100:52,125:56,150:56,200:60,300:78}},
   strainer:{fl:{15:125,20:140,25:150,32:170,40:190,50:230,65:305,80:360,100:415,125:465,150:515,200:580,250:680,300:800}, th:{15:85,20:100,25:115,32:135,40:150,50:180}},
-  check:{th:{15:65,20:80,25:90,32:105,40:120,50:140}}
+  check:{th:{15:65,20:80,25:90,32:105,40:120,50:140}, fl:{40:190,50:200,65:220,80:240,100:290,125:360,150:410,200:500,250:620,300:700,350:787}},
+  wcheck:{fl:{40:54,50:56,65:56,80:59,100:66,125:72,150:78,200:96}}
 };
 // ライニング鋼管（SGP-VA/VB/VD）用：東洋 コアタイト（コア内蔵 P・V兼用形）
 const VFSK={gate:{th:{15:57,20:64,25:72,32:81,40:83,50:100}},check:{th:{15:82,20:98,25:109,32:125,40:138,50:162}}};
 const VSRCSK={gate:{th:"東洋 LJ10-BSR-SK（コア内蔵10K）"},check:{th:"東洋 LJ10-BNS-SK-N（コア内蔵10K）"}};
-const VSRC={gate:{fl:"東洋 150-BSF-N 青銅フランジ形（15〜100A）／125A以上はJIS B 2031 鋳鉄10K（青銅品なし）",th:"東洋 LJ10-BSR（JIS B 2011 青銅10K）"},globe:{fl:"東洋 10-DGF-N／KITZ（65・80A）",th:"東洋 10-DG-N"},ball:{fl:"KITZ 10FCTB（フルボア）"},bfly:{wf:"JIS B 2002 系列46（ISO 5752）"},strainer:{fl:"KITZ 10FDYBF",th:"大和バルブ／東洋 16-DT-N"},check:{th:"東洋 LJ10-BNS（JIS B 2011 青銅10K）"}};
-const CONNS={gate:["th","fl"],globe:["th","fl"],ball:["th","fl"],bfly:["wf"],check:["th","fl"],strainer:["th","fl"],flex:["rb","fl","th"],union:["th"],socket:["th"],flange:["fl"],cap:["th"]};
+const VSRC={gate:{fl:"東洋 150-BSF-N 青銅フランジ形（15〜100A）／125A以上はJIS B 2031 鋳鉄10K（青銅品なし）",th:"東洋 LJ10-BSR（JIS B 2011 青銅10K）"},globe:{fl:"東洋 10-DGF-N／KITZ（65・80A）",th:"東洋 10-DG-N"},ball:{fl:"KITZ 10FCTB（フルボア）"},bfly:{wf:"JIS B 2002 系列46（ISO 5752）"},strainer:{fl:"KITZ 10FDYBF",th:"大和バルブ／東洋 16-DT-N"},check:{th:"東洋 LJ10-BNS（JIS B 2011 青銅10K）",fl:"東洋 J10-FNSF 鋳鉄F形スイング（JIS B 2031。40A・250A以上は東洋標準）"},wcheck:{fl:"東洋 10-BNW／L10-BNW 青銅ウエハー形（衝撃吸収式）カタログNo.650"}};
+const CONNS={gate:["th","fl"],globe:["th","fl"],ball:["th","fl"],bfly:["wf"],check:["th","fl"],wcheck:["fl"],strainer:["th","fl"],flex:["rb","fl","th"],union:["th"],socket:["th"],flange:["fl"],cap:["th"]};
 const CONNNAME={th:"ねじ込み",fl:"フランジ(10K)",wf:"ウェハー",rb:"フランジ(ゴム面・パッキンなし)"};
 // フレキのシリーズ（面間 L）
 const FLEXSER={
@@ -802,9 +803,9 @@ function defConn(t){ if(t==="flex") return "rb";const cs=CONNS[t]||["th"]; const
 // 接続形式の表記（注文ミス防止）
 const CTAG={fl:"(F)",rb:"(F)",wf:"(W)",th:""};
 const CFORM={fl:"フランジ形",rb:"フランジ形・ゴム面",wf:"ウェハー形",th:"ねじ込み形"};
-const needTag=t=>["gate","globe","ball","bfly","check","strainer","flex","union"].includes(t);
+const needTag=t=>["gate","globe","ball","bfly","check","wcheck","strainer","flex","union"].includes(t);
 // フランジ取合いの部材：寸法は「部材の面」まで、部材自体の面間は別寸法
-const isFaceComp=c=>!!c&&(c.t==="flange"||["gate","globe","ball","bfly","check","strainer","flex"].includes(c.t)&&["fl","wf","rb"].includes(c.conn));
+const isFaceComp=c=>!!c&&(c.t==="flange"||["gate","globe","ball","bfly","check","wcheck","strainer","flex"].includes(c.t)&&["fl","wf","rb"].includes(c.conn));
 // 部材が占める長さ：面間＋（フランジ形はパッキン2枚）。配管の寸法は自分のフランジ面まで
 function faceLen(n){if(!n||!isFaceComp(n.comp))return 0;const gk=gasket(nodeSize(n.id));if(n.comp.t==="flange")return gk;const v=faceOf(n.comp,nodeSize(n.id)).v;return (isNaN(v)?0:v)+(n.comp.conn==="fl"?2*gk:0);}
 const ENDT={th:"ねじ込みフランジ",so:"差込溶接フランジ(SOP)",fr:"つば出し（ラップ・ジャストフレア）",nj:"ナイスジョイント フランジアダプタ",njf:"ナイスジョイント F式フランジ(75〜100Su)"};
@@ -825,7 +826,7 @@ function endInfo(c,pt,sz){sz=+sz;const t=endType(c,pt);
   if(t==="so"){const w=SGPT[sz],g=+$("eSo").value||0;if(w==null)return {v:NaN,t:"肉厚なし"};return {v:w+g,t:`t${w}${g?"＋"+g:""}`};}
   const f=+$("eFr").value||0;return {v:-f,t:f?`加工代＋${f}`:"0"};}
 function endAdj(c,pt,sz){return endInfo(c,pt,sz).v;}
-const INLINE=["gate","globe","ball","bfly","check","strainer","flex","flange","union","socket"];
+const INLINE=["gate","globe","ball","bfly","check","wcheck","strainer","flex","flange","union","socket"];
 // ソケット長さ L（CK継手 JIS B 2301）
 const SOCK={15:35,20:40,25:45,32:50,40:55,50:60,65:70,80:75,100:85,125:95,150:105};
 const gasket=sz=>(+sz>=(+$("gkSw").value||150))?(+$("gk2").value||0):(+$("gk1").value||0);
@@ -993,6 +994,7 @@ function symbol(c,p,u,col){ // u:配管方向の画面単位ベクトル
     case "ball": g=bow(false)+`<circle cx="${p[0]}" cy="${p[1]}" r="4.2" fill="${PAL.bg}" stroke="${col}" stroke-width="1.5"/>`;break;
     case "bfly": {const a=P(0,-9),b=P(0,9);g=bow(false)+`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="1.8"/>`;break;}
     case "check": g=bow(true);break;
+    case "wcheck": {const a=P(0,-9),b=P(0,9);g=bow(true)+`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="1.8"/>`;break;}
     case "strainer": {const a=P(-9,0),b=P(9,0),c2=P(4,11),d2=P(12,11);g=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="5"/><line x1="${p[0]}" y1="${p[1]}" x2="${c2[0]}" y2="${c2[1]}" stroke="${col}" stroke-width="2.2"/><line x1="${c2[0]}" y1="${c2[1]}" x2="${d2[0]}" y2="${d2[1]}" stroke="${col}" stroke-width="2.2"/>`;break;}
     case "flange": g=gapMask(-3.5,3.5)+fl(-3.5)+fl(3.5);break;
     case "flex": {
@@ -2026,7 +2028,7 @@ function basisHTML(){
    <br>　VP＋DV継手：控除＝Z。積水エスロンDV継手 製作図（JIS K 6739）。90°Yは本管Z1・枝Z3（Z1とZ2の差は最大1mm、Z1を採用）。ソケット・インクリーザは全体Z/2ずつ。
    <br>　SUS＋ナイスジョイント：控除＝ℓ1（継手の芯から管端）。オーエヌ工業 ナイスジョイントX 施工マニュアル「パイプ切断寸法表」χ＝L−(ℓ1＋ℓ2)。75〜100SuはNJL（20K）。フランジ取合いはフランジアダプタNJXFM/NJLFMのℓ1（フランジ面〜管端）＋パッキン厚。仕切弁NJX-670・ボールNJX-200はℓ1。
    <br>　出典：<a href="https://www.kuwana-metals.com/download/download_zumen/zumen_3.html">桑名PQWK図面</a>／<a href="https://www.kuwana-metals.com/Portals/0/resource/pdf/instructions/KW1-23004.pdf">桑名 取扱説明書KW1-23004</a>／<a href="https://www.kuwana-metals.com/Portals/0/resource/pdf/zumen/zumen_10/F16-25099.pdf">桑名10KF</a>／<a href="https://www.eslontimes.com/document/detail/4/19344">エスロンTS継手</a>／<a href="https://www.eslontimes.com/document/detail/4/88">エスロンDV継手</a>／<a href="https://www.onk-net.co.jp/libs/product/nicejoint-x/document/njx_manual.pdf">ナイスジョイントX施工マニュアル</a></div>
-  <div>・出典URL：仕切弁F <a href="https://jp.misumi-ec.com/vona2/detail/221000848612/">東洋 J10-FSRF（JIS B 2031）</a>・<a href="https://www.scribd.com/document/511504896/E-120-14">KITZ 10FCL</a>・<a href="https://jp.misumi-ec.com/vona2/detail/221000847699/">東洋 10-DSRF-N(BB)</a>／仕切弁ねじ <a href="https://jp.misumi-ec.com/vona2/detail/221000848465/">東洋 J10K 青銅ねじ込み仕切弁（JIS B 2011）</a>／玉形弁F <a href="https://jp.misumi-ec.com/vona2/detail/221000847677/">東洋 10-DGF-N</a>・<a href="https://www.scribd.com/document/719494681/Gate-Valve">KITZ ダクタイル弁カタログ</a>／玉形弁ねじ <a href="https://in.c.misumi-ec.com/book/TYV1_01/pdf/0059.pdf">東洋 10-DG-N</a>／ボール弁F <a href="https://www.ramevalve.com/wp-content/uploads/2020/10/Cast-Iron-Ball-Valve-fig.10FCTB.pdf">KITZ 10FCTB</a>／バタフライ <a href="https://jp.misumi-ec.com/vona2/detail/221004973794/">JIS B 2002 系列46</a>（ウェハー形はゴムシートのため配管用ガスケット不要とする製品の記載に従い、パッキン厚を控除しない）／ストレーナF <a href="https://jp.misumi-ec.com/vona2/detail/221000053159/">KITZ 10FDYBF</a>／ストレーナねじ <a href="https://www.monotaro.com/g/06245480/">大和バルブ</a>・<a href="https://my.c.misumi-ec.com/book/TYV1_01/pdf/0066.pdf">東洋 16-DT-N</a>。逆止弁・表にない口径は既定値なし（入力要）。フレキ面間：${Object.values(FLEXSER).filter(s=>s.L).map(s=>s.name+"＝"+Object.entries(s.L).map(([k,v])=>k+":"+v).join(" ")).join("／")}。出典：<a href="https://in.c.misumi-ec.com/book/TZN1_01/pdf/0001.pdf">TOZEN SK-10</a>・<a href="https://www.monotaro.com/p/8594/1554/">タフボーイSS10K</a>・<a href="https://www.monotaro.com/p/8594/1667/">TOUGHLEX</a>。テクノフレックスSUSフレキはフランジ型・全長を使用者が指定。接続「ゴム面・パッキンなし」はパッキン厚を控除しない（ゴムフランジ面でシールする前提。<b>メーカー資料での確認はできていない</b>ため、パッキンを入れる場合は接続を「フランジ(10K)」に切替）。ねじ込みフレキは既定値なし（全長を入力）。</div>
+  <div>・出典URL：仕切弁F <a href="https://jp.misumi-ec.com/vona2/detail/221000848612/">東洋 J10-FSRF（JIS B 2031）</a>・<a href="https://www.scribd.com/document/511504896/E-120-14">KITZ 10FCL</a>・<a href="https://jp.misumi-ec.com/vona2/detail/221000847699/">東洋 10-DSRF-N(BB)</a>／仕切弁ねじ <a href="https://jp.misumi-ec.com/vona2/detail/221000848465/">東洋 J10K 青銅ねじ込み仕切弁（JIS B 2011）</a>／玉形弁F <a href="https://jp.misumi-ec.com/vona2/detail/221000847677/">東洋 10-DGF-N</a>・<a href="https://www.scribd.com/document/719494681/Gate-Valve">KITZ ダクタイル弁カタログ</a>／玉形弁ねじ <a href="https://in.c.misumi-ec.com/book/TYV1_01/pdf/0059.pdf">東洋 10-DG-N</a>／ボール弁F <a href="https://www.ramevalve.com/wp-content/uploads/2020/10/Cast-Iron-Ball-Valve-fig.10FCTB.pdf">KITZ 10FCTB</a>／バタフライ <a href="https://jp.misumi-ec.com/vona2/detail/221004973794/">JIS B 2002 系列46</a>（ウェハー形はゴムシートのため配管用ガスケット不要とする製品の記載に従い、パッキン厚を控除しない）／ストレーナF <a href="https://jp.misumi-ec.com/vona2/detail/221000053159/">KITZ 10FDYBF</a>／ストレーナねじ <a href="https://www.monotaro.com/g/06245480/">大和バルブ</a>・<a href="https://my.c.misumi-ec.com/book/TYV1_01/pdf/0066.pdf">東洋 16-DT-N</a>。チャッキF <a href="https://jp.misumi-ec.com/vona2/detail/221000849556/">東洋 J10-FNSF</a>。ウイングチャッキ（ウエハー形）・表にない口径は既定値なし（入力要）。フレキ面間：${Object.values(FLEXSER).filter(s=>s.L).map(s=>s.name+"＝"+Object.entries(s.L).map(([k,v])=>k+":"+v).join(" ")).join("／")}。出典：<a href="https://in.c.misumi-ec.com/book/TZN1_01/pdf/0001.pdf">TOZEN SK-10</a>・<a href="https://www.monotaro.com/p/8594/1554/">タフボーイSS10K</a>・<a href="https://www.monotaro.com/p/8594/1667/">TOUGHLEX</a>。テクノフレックスSUSフレキはフランジ型・全長を使用者が指定。接続「ゴム面・パッキンなし」はパッキン厚を控除しない（ゴムフランジ面でシールする前提。<b>メーカー資料での確認はできていない</b>ため、パッキンを入れる場合は接続を「フランジ(10K)」に切替）。ねじ込みフレキは既定値なし（全長を入力）。</div>
   <div>・レジューサ：ねじ込みは径違いソケット（控除＝L/2 − a、aは各側の口径の値）、L＝${Object.entries({20:38,25:42,32:48,40:52,50:58,65:62,80:72,100:85,125:95,150:105}).map(([k,v])=>k+'×:'+v).join(' ')}（65×40以上は65）<a href="https://jp.misumi-ec.com/vona2/detail/221005230678/">CK継手 径違いソケット</a>。溶接は同心レジューサ（控除＝H/2 + g）、H＝${Object.entries(REDW).map(([k,v])=>k+'×:'+v).join(' ')} <a href="https://jp.misumi-ec.com/vona2/detail/221000711228/">JIS B 2311 FSGP 同心レジューサ</a>。径違いエルボ・径違いTは、各管の口径の同径継手寸法で近似（正確には採用品の径違い寸法を確認）。</div>
   <div>・ソケット（ねじ込み）：控除＝L/2 − a、L＝${Object.entries(SOCK).map(([k,v])=>k+':'+v).join(' ')}（シーケー金属 CK継手 ソケット <a href="https://jp.misumi-ec.com/vona2/detail/221005230522/">jp.misumi-ec.com/vona2/detail/221005230522/</a>）。キャップ＝管端扱い（控除0）。プラグ＝継手の閉止口として継手判定に算入（3口＝T 等）。溶接の直線継ぎは g/2。</div>
   <div>・照合：積水化学 エスロコートLX継手エルボの Z 寸法（16,19,23,29,30,37,46,53,69…）が上表の A−a と一致 <a href="https://eslontimes.com/document/detail/4/583">eslontimes.com/document/detail/4/583</a></div>
@@ -2185,7 +2187,7 @@ async function build3D(){if(!$("v3"))return;await load3();if(!T3)init3();$("v3ms
     if(!n.comp){if(f==="e90"||f==="tee"||f==="cross"){const m=new THREE.Mesh(new THREE.SphereGeometry(r*1.18,20,14),new THREE.MeshStandardMaterial({color:PCOL[pt],metalness:0.35,roughness:0.5}));m.position.copy(V(w));g.add(m);}
       (n.plugs||[]).forEach(d=>{const D=DIRS[d];cyl(w,[w[0]+D[0]*r*1.6,w[1]+D[1]*r*1.6,w[2]+D[2]*r*1.6],r*0.9,r*0.9,0x666666);});return;}
     const s=ss[0],D=DIRS[s.dir],c=n.comp,F=faceLen(n)||Math.max(r*3,60),h2=F/2,A=[w[0]-D[0]*h2,w[1]-D[1]*h2,w[2]-D[2]*h2],B=[w[0]+D[0]*h2,w[1]+D[1]*h2,w[2]+D[2]*h2];
-    if(["gate","globe","ball","bfly","check","strainer"].includes(c.t)){cyl(A,w,r*2.1,r*0.7,0xe5484d);cyl(w,B,r*0.7,r*2.1,0xe5484d);
+    if(["gate","globe","ball","bfly","check","wcheck","strainer"].includes(c.t)){cyl(A,w,r*2.1,r*0.7,0xe5484d);cyl(w,B,r*0.7,r*2.1,0xe5484d);
       const st_=[w[0],w[1],w[2]+r*3.2];cyl(w,st_,r*0.35,r*0.35,0xbbbbbb);if(c.conn==="fl"||c.conn==="wf"){cyl(A,[A[0]+D[0]*8,A[1]+D[1]*8,A[2]+D[2]*8],r*2.4,r*2.4,0x555555);cyl([B[0]-D[0]*8,B[1]-D[1]*8,B[2]-D[2]*8],B,r*2.4,r*2.4,0x555555);}
       T3.labs.push({p:st_,t:c.label||PARTS[c.t][1],c:"#ff8a8a"});}
     else if(c.t==="flex"){cyl(A,B,r*1.5,r*1.5,0xf5a524);T3.labs.push({p:[w[0],w[1],w[2]+r*2.5],t:c.label||FLEXSER[c.series||"sk10"].ab,c:"#ffd27a"});}
