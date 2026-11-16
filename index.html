@@ -1131,6 +1131,12 @@ function drawSVG(sol,P,T,opt={}){
     g+=`<text transform="translate(${mx},${my}) rotate(${ang})" y="4" font-size="12.5" font-weight="700" text-anchor="middle">${txt}</text>`;
     numLbl.push({s,a,b,e}); dimPlace[s.id]={e,off};
   });
+  // 高さ（FL+）：横引きごとに1つ（基準が設定されているとき）
+  {const LI=levelInfo();if(LI){SG.forEach(({s,a,b})=>{if(/[UD]/.test(s.dir))return;if(M.segs.some(x=>x.b===s.a&&x.dir===s.dir))return;const lv=levelAt(s.a,LI);if(lv==null)return;
+    const t=fmtLv(lv),u=[b[0]-a[0],b[1]-a[1]],ul=Math.hypot(u[0],u[1])||1;let nn=[-u[1]/ul,u[0]/ul];const dp=dimPlace[s.id];if(dp&&dp.e&&(dp.e[0]*nn[0]+dp.e[1]*nn[1])>0)nn=[-nn[0],-nn[1]];
+    let an=Math.atan2(u[1],u[0])*180/Math.PI;if(an>90)an-=180;if(an<-90)an+=180;const mx=a[0]+u[0]*0.3+nn[0]*16,my=a[1]+u[1]*0.3+nn[1]*16;
+    g+=`<text transform="translate(${mx},${my}) rotate(${an})" y="4" font-size="11" font-weight="700" text-anchor="middle" fill="${blue}">${t}</text>`;});
+   if(P[M.lv.node]){const q=T(P[M.lv.node]);g+=`<path d="M${q[0]-6} ${q[1]-14}L${q[0]+6} ${q[1]-14}L${q[0]} ${q[1]-5}Z" fill="none" stroke="${blue}" stroke-width="1.4"/>`;}}}
   // フランジ取合い部材の面間寸法（配管寸法と一直線に並べる）
   M.nodes.forEach(n=>{if(!P[n.id]||!isFaceComp(n.comp)||n.comp.t==="flange")return;const mi=movableInfo(n);if(!mi)return;const dp=dimPlace[mi.s1.id]||dimPlace[mi.s2.id];if(!dp)return;
     const F=faceOf(n.comp,nodeSize(n.id)).v, p=T(P[n.id]), u=SV[mi.s1.dir], e=dp.e, off=dp.off, FS=14;
@@ -1511,6 +1517,7 @@ function renderSide(sol){
   } else {
     E.innerHTML="";
   }
+  if(sel&&(sel.k==="s"||sel.k==="n")&&E.innerHTML)addLevelUI(E);
   $("list").innerHTML=`<tr><th>No</th><th>口径</th><th style="text-align:right">芯芯</th><th style="text-align:right">切寸法</th></tr>`+
     (M.segs.length?M.segs.map(s=>{const c=sol.cut[s.id];return `<tr data-s="${s.id}" class="${sel&&sel.k==="s"&&sel.id===s.id?"sel":""}"><td>${idx(s)}</td><td>${lab(szOf(s),ptOf(s))}</td><td class="n ${s.cc==null?"est":""}">${s.cc??"≈"+s.est}</td><td class="n L">${s.cc==null?"":(c.ok?fmtL(c.L):"<span style='color:var(--ng)'>?</span>")}</td></tr>`;}).join(""):`<tr><td colspan="4" class="empty">まだ線がありません</td></tr>`);
   $("list").querySelectorAll("tr[data-s]").forEach(tr=>tr.onclick=()=>{sel={k:"s",id:+tr.dataset.s};render();});
@@ -1771,6 +1778,40 @@ function runOf(s){const ids=[s],axOf=d=>AX.findIndex(a=>a.includes(d)),ax=axOf(s
   for(let g=0;g<500;g++){const nx=M.segs.find(x=>x.a===cur.b&&x.dir===cur.dir);if(!nx||ids.includes(nx))break;ids.push(nx);cur=nx;}
   cur=s;for(let g=0;g<500;g++){const pv=M.segs.find(x=>x.b===cur.a&&x.dir===cur.dir);if(!pv||ids.includes(pv))break;ids.unshift(pv);cur=pv;}
   const nodes=new Set();ids.forEach(x=>{nodes.add(x.a);nodes.add(x.b);});return {segs:ids,nodes,ax};}
+// ===== 高さ（レベル）=====
+// 基準：M.lv={node,v}（その点の芯の高さ＝FL+v）。ほかの点は実寸（芯芯）でたどった高さの差で出す
+function levelInfo(){if(!M.lv||!node(M.lv.node))return null;const P=layout3(),r=P[M.lv.node];return r?{P,z0:r[2],v:M.lv.v}:null;}
+function levelAt(nid,LI){LI=LI||levelInfo();if(!LI||!LI.P[nid])return null;return Math.round(LI.v+(LI.P[nid][2]-LI.z0));}
+const fmtLv=v=>"FL"+(v>=0?"+":"−")+Math.abs(v).toLocaleString();
+// 横引きをまるごと上下に a(mm) 動かす：上流の立て管は伸び縮み、下流の立て管は先端を残して伸び縮み、横につながる枝はついてくる
+function shiftRunZ(s,a){
+  if(/[UD]/.test(s.dir))return "横引き（水平の配管）を選んで";
+  if(!a)return null;
+  const R_=runOf(s),inRun=new Set(R_.segs),axOf=d=>AX.findIndex(x=>x.includes(d));
+  const att=M.segs.filter(x=>!inRun.has(x)&&(R_.nodes.has(x.a)||R_.nodes.has(x.b)));
+  const up=att.filter(x=>R_.nodes.has(x.b)&&!R_.nodes.has(x.a));
+  const rootN=[...R_.nodes].map(node).find(n=>n&&n.root);
+  if(up.length){if(up.some(x=>axOf(x.dir)!==2))return "上流が横からつながっていて高さを変えられない（上流の立て管で上げ下げして）";}
+  else if(!rootN)return "上流が見つからない";
+  const len=x=>x.cc??x.est, nl=x=>{const sg=x.dir==="U"?1:-1,upS=R_.nodes.has(x.b)&&!R_.nodes.has(x.a);return len(x)+(upS?sg:-sg)*a;};
+  for(const x of att){if(axOf(x.dir)!==2)continue;if(nl(x)<10)return `立て管 ${idx(x)} が ${Math.round(nl(x))} になるので無理`;}
+  push();
+  att.forEach(x=>{M.segs.forEach(y=>{if(y.pair===x.id){delete y.pair;delete y.tot;}});delete x.pair;delete x.tot;});
+  for(const x of att){if(axOf(x.dir)!==2)continue;const v=Math.round(nl(x)*10)/10;if(x.cc!=null)x.cc=v;else x.est=v;}
+  if(!up.length&&rootN.root)rootN.root=[rootN.root[0],rootN.root[1],rootN.root[2]+a];
+  return null;}
+function flipVert(s){s.dir=s.dir.split("").map(c=>c==="U"?"D":c==="D"?"U":c).join("");}
+function addLevelUI(E){const box=document.createElement("div");box.style.cssText="margin-top:10px;border-top:1px solid rgba(128,128,128,.35);padding-top:8px";let h="";
+  if(sel.k==="s"){const s=seg(sel.id);if(!s)return;
+    if(/[UD]/.test(s.dir))h+=`<button id="lvFlip" style="width:100%">上下を逆にする（この先の配管ごと）</button>`;
+    else{const lv=levelAt(s.a);h+=`<label>この横引きの高さ（芯）${lv!=null?"：今 <b>"+fmtLv(lv)+"</b>":"（基準未設定：上げ下げ量で動かす）"}</label><div class="row"><input id="lvIn" type="number" inputmode="decimal" placeholder="${lv!=null?"例：2450（FL+の数字）":"例：200（＋上げ／−下げ）"}" style="flex:1"><button id="lvGo">${lv!=null?"この高さにする":"上下に動かす"}</button></div>`;}}
+  else{const n=node(sel.id);if(!n)return;const lv=levelAt(n.id);
+    h+=`<label>高さの基準（芯）：${lv!=null?"この点 <b>"+fmtLv(lv)+"</b>":"未設定"}</label><div class="row"><input id="lvRef" type="number" inputmode="decimal" placeholder="例：2450" style="flex:1"><button id="lvRefGo">この点をFL+○○にする</button></div>${M.lv?`<button id="lvClr" style="margin-top:4px">高さの基準を消す</button>`:""}`;}
+  box.innerHTML=h;E.appendChild(box);
+  if($("lvFlip"))$("lvFlip").onclick=()=>{push();flipVert(seg(sel.id));render();toast("上下を逆にした");};
+  if($("lvGo"))$("lvGo").onclick=()=>{const s=seg(sel.id),v=parseFloat($("lvIn").value);if(isNaN(v))return;const lv=levelAt(s.a),a=lv!=null?v-lv:v;const er=shiftRunZ(s,a);if(er){toast(er);return;}render();toast(lv!=null?`${fmtLv(v)} にした`:`${a>0?"上げた":"下げた"}：${Math.abs(a)}`);};
+  if($("lvRefGo"))$("lvRefGo").onclick=()=>{const v=parseFloat($("lvRef").value);if(isNaN(v))return;push();M.lv={node:sel.id,v};render();toast(`基準：この点＝${fmtLv(v)}`);};
+  if($("lvClr"))$("lvClr").onclick=()=>{push();delete M.lv;render();};}
 function startRoute(s,p){if(isDiag(s.dir)){toast("45°の配管はルート移動できない（寸法で直す）");return;}const R_=runOf(s),axOf=d=>AX.findIndex(a=>a.includes(d)),inRun=new Set(R_.segs);
   const att=M.segs.filter(x=>!inRun.has(x)&&(R_.nodes.has(x.a)||R_.nodes.has(x.b)));
   const up=att.filter(x=>R_.nodes.has(x.b)&&!R_.nodes.has(x.a));                 // 上流から入ってくる配管
