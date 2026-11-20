@@ -537,8 +537,48 @@ function layout(){syncEq();
   let changed=true,guard=0;
   while(changed&&guard++<1000){changed=false;
     for(const s of M.segs){if(P[s.a]&&!P[s.b]){const d=DIRS[s.dir],L=vis(s),a=P[s.a];P[s.b]=[a[0]+d[0]*L,a[1]+d[1]*L,a[2]+d[2]*L];changed=true;}}}
+  try{relaxLoops(P,vis,false);}catch(e){console.error(e);}
   return P;
 }
+/* ===== ループ（連結で閉じた配管・機器どうしをつないだ配管）の配置 =====
+   木の部分は寸法どおりに積み上げ、閉じた部分は最小二乗で解く：
+   各区間 a→b で「向きに直交する方向のずれ」はほぼ不可（重み1e4）、「向きに沿った長さ」は
+   寸法入力済み＝重み100、手描き仮（≈）＝重み1。→ 入力した寸法が形に効き、≈の区間が吸収する。
+   機器の接続口（root）は固定。 */
+function relaxLoops(P,LEN,write){const SEG=M.segs.filter(s=>P[s.a]&&P[s.b]);if(!SEG.length)return [];
+  const dv=s=>DIRS[s.dir],mis=s=>{const d=dv(s),L=LEN(s);return Math.hypot(...[0,1,2].map(i=>P[s.b][i]-P[s.a][i]-d[i]*L));};
+  if(!SEG.some(s=>mis(s)>0.5))return [];
+  const fixed=new Set(M.nodes.filter(n=>n.root&&P[n.id]).map(n=>n.id)),deg={},adj={};
+  SEG.forEach(s=>{[s.a,s.b].forEach(x=>{deg[x]=(deg[x]||0)+1;(adj[x]=adj[x]||[]).push(s);});});
+  const alive=new Set(Object.keys(deg).map(Number)),q=[...alive].filter(x=>deg[x]<=1&&!fixed.has(x));
+  while(q.length){const x=q.pop();if(!alive.has(x))continue;alive.delete(x);(adj[x]||[]).forEach(s=>{const o=s.a===x?s.b:s.a;if(alive.has(o)){deg[o]--;if(deg[o]<=1&&!fixed.has(o))q.push(o);}});}
+  const CS=SEG.filter(s=>alive.has(s.a)&&alive.has(s.b));if(!CS.length)return [];
+  const cn=[...new Set(CS.flatMap(s=>[s.a,s.b]))];let fx=cn.filter(x=>fixed.has(x));if(!fx.length){fx=[cn[0]];}
+  const fxS=new Set(fx),free=cn.filter(x=>!fxS.has(x));if(!free.length||free.length>260)return [];
+  const ix={};free.forEach((x,i)=>ix[x]=i);const n3=free.length*3,N=Array.from({length:n3},()=>new Float64Array(n3)),b=new Float64Array(n3);
+  const Wp=1e4;
+  CS.forEach(s=>{const d=dv(s),L=LEN(s),wl=s.cc!=null?100:1,t=d.map(v=>v*L),Wm=[0,1,2].map(i=>[0,1,2].map(j=>wl*d[i]*d[j]+Wp*((i===j?1:0)-d[i]*d[j])));
+    const A=ix[s.a],B=ix[s.b],add=(r,c,sg)=>{for(let i=0;i<3;i++)for(let j=0;j<3;j++)N[r*3+i][c*3+j]+=sg*Wm[i][j];},rh=(r,v)=>{for(let i=0;i<3;i++)for(let j=0;j<3;j++)b[r*3+i]+=Wm[i][j]*v[j];};
+    if(A!=null&&B!=null){add(A,A,1);add(B,B,1);add(A,B,-1);add(B,A,-1);rh(B,t);rh(A,t.map(v=>-v));}
+    else if(B!=null){add(B,B,1);rh(B,P[s.a].map((v,i)=>v+t[i]));}
+    else if(A!=null){add(A,A,1);rh(A,P[s.b].map((v,i)=>v-t[i]));}});
+  for(let i=0;i<n3;i++)N[i][i]+=1e-9;
+  // ガウス消去（部分ピボット）
+  for(let c=0;c<n3;c++){let p=c;for(let r=c+1;r<n3;r++)if(Math.abs(N[r][c])>Math.abs(N[p][c]))p=r;if(Math.abs(N[p][c])<1e-12)continue;
+    if(p!==c){[N[p],N[c]]=[N[c],N[p]];[b[p],b[c]]=[b[c],b[p]];}const Nc=N[c],pv=Nc[c];
+    for(let r=c+1;r<n3;r++){const f=N[r][c]/pv;if(!f)continue;const Nr=N[r];for(let k=c;k<n3;k++)Nr[k]-=f*Nc[k];b[r]-=f*b[c];}}
+  const X=new Float64Array(n3);for(let r=n3-1;r>=0;r--){let v=b[r];for(let k=r+1;k<n3;k++)v-=N[r][k]*X[k];X[r]=Math.abs(N[r][r])>1e-12?v/N[r][r]:0;}
+  free.forEach(x=>{const i=ix[x]*3;P[x]=[X[i],X[i+1],X[i+2]];});
+  // 閉じた部分の外（枝）は寸法どおりに付け直す
+  const core=new Set(cn);Object.keys(P).forEach(k=>{if(!core.has(+k)&&!fixed.has(+k))delete P[k];});
+  let ch=true,g=0;while(ch&&g++<1000){ch=false;for(const s of M.segs){const d=dv(s),L=LEN(s);
+    if(P[s.a]&&!P[s.b]){P[s.b]=P[s.a].map((v,i)=>v+d[i]*L);ch=true;}else if(P[s.b]&&!P[s.a]){P[s.a]=P[s.b].map((v,i)=>v-d[i]*L);ch=true;}}}
+  // 結果：≈の区間は形から長さを決める／入力済みで合わない所を返す
+  const bad=[];CS.forEach(s=>{const d=dv(s),along=[0,1,2].reduce((t,i)=>t+(P[s.b][i]-P[s.a][i])*d[i],0),dev=along-LEN(s);
+    if(s.cc==null){if(write){const f=(faceLen(node(s.a))+faceLen(node(s.b)))/2;s.est=Math.max(1,Math.round(along-f));}}
+    else if(Math.abs(dev)>1)bad.push({s,dev});});
+  return bad;}
+
 const toScr=w=>{const p=proj(w[0],w[1],w[2]);return [p[0]*view.s+view.px,p[1]*view.s+view.py];};
 function fromScr(sx,sy){const A=(sx-view.px)/view.s/C30, B=-2*(sy-view.py)/view.s; const r=rotXY((A+B)/2,(B-A)/2,(4-ROT)%4); return [r[0],r[1],0];}
 
@@ -796,6 +836,25 @@ function mergeAt(nid){const n=node(nid);if(!n||n.comp||n.noz||n.root)return fals
   ["q","dpEnd","pEnd","endNm"].forEach(k=>{if(s2[k]!=null)s1[k]=s2[k];else delete s1[k];});delete s1.pair;delete s1.tot;
   s1.b=s2.b;M.segs=M.segs.filter(x=>x!==s2);M.nodes=M.nodes.filter(x=>x!==n);return true;}
 (function(){const _fs=finishStroke;finishStroke=function(){const st=drawSnap&&drawSnap.id,s0=M.sid,r=_fs.apply(this,arguments);if(st!=null&&M.sid>s0&&mergeAt(st))render();return r;};})();
+// 描き終わりの吸着：線を離した所に 管端・点・配管 があれば、そこにつなぐ（Tの途中＝分岐、同じ向きの管端＝1本にまとめる）
+function endTarget(p,exSeg,exNode){const R=lastPT==="mouse"?16:30;let best=null,bd=R;
+  M.nodes.forEach(n=>{if(exNode.has(n.id)||!LAST.P[n.id])return;if(n.comp&&INLINE.includes(n.comp.t))return;const deg=M.segs.filter(x=>x.a===n.id||x.b===n.id).length;if(deg>=4)return;
+    const q=toScr(LAST.P[n.id]),d=Math.hypot(q[0]-p[0],q[1]-p[1])-(n.noz?8:deg===1?6:0);if(d<bd){bd=d;best={k:"n",n};}});
+  if(best)return best;const hs=nearestSeg(p,lastPT==="mouse"?10:18);if(hs&&!exSeg.has(hs.s.id)&&hs.t>0.06&&hs.t<0.94)return {k:"s",s:hs.s,t:hs.t};return null;}
+(function(){const _fs=finishStroke;finishStroke=function(){const endP=stroke.length?stroke[stroke.length-1].slice():null,s0=M.sid,n0=M.nid,r=_fs.apply(this,arguments);
+  if(endP&&M.sid>s0){const nw=M.segs.filter(x=>x.id>=s0),last=nw[nw.length-1],L=node(last.b);
+    if(L&&!M.segs.some(x=>x!==last&&(x.a===L.id||x.b===L.id))){
+      const exN=new Set([L.id,last.a]);const tg=endTarget(endP,new Set(nw.map(x=>x.id)),exN);
+      if(tg){const T=tg.k==="n"?tg.n:splitSeg(tg.s,tg.t,null);if(tg.k==="s"&&tg.s.sys!=null&&last.sys==null)last.sys=tg.s.sys;
+        last.b=T.id;M.nodes=M.nodes.filter(x=>x!==L);if(actEnd===L.id)actEnd=null;mergeAt(T.id);render();toast(tg.k==="s"?"配管にT分岐でつないだ":T.noz?"機器の接続口につないだ":"管端・点につないだ（寸法の合わない所は≈の区間が吸収）");}}}
+  return r;};})();
+// つながってない（重なってるだけ）の管端：実寸の位置で 30mm 以内に別の点・配管がある
+function looseEnds(P3){const out=[];const deg={};M.segs.forEach(s=>{deg[s.a]=(deg[s.a]||0)+1;deg[s.b]=(deg[s.b]||0)+1;});
+  M.nodes.forEach(n=>{if(deg[n.id]!==1||n.comp||!P3[n.id])return;const A=P3[n.id],own=M.segs.find(s=>s.a===n.id||s.b===n.id);
+    let hit=null;M.nodes.forEach(m=>{if(hit||m.id===n.id||!P3[m.id]||m.id===own.a||m.id===own.b)return;if(Math.hypot(...[0,1,2].map(i=>P3[m.id][i]-A[i]))<30)hit=m;});
+    if(!hit)M.segs.forEach(s=>{if(hit||s===own||s.a===n.id||s.b===n.id||!P3[s.a]||!P3[s.b])return;const B=P3[s.a],C=P3[s.b],d=[0,1,2].map(i=>C[i]-B[i]),L2=d.reduce((t,v)=>t+v*v,0)||1;let t=[0,1,2].reduce((q,i)=>q+(A[i]-B[i])*d[i],0)/L2;t=Math.max(0,Math.min(1,t));
+      if(Math.hypot(...[0,1,2].map(i=>B[i]+d[i]*t-A[i]))<30)hit=s;});
+    if(hit)out.push(n.id);});return out;}
 function pbDuct(){const k=($("pbKind")||{}).value;return {m:k==="round"?"none":(($("pbM")||{}).value||"kyo"),sh:k==="round"?"c":"r",W:+$("pbW").value||400,H:+$("pbH").value||300,D:+$("pbD").value||200,use:$("pbUse").value||"SA"};}
 /* ===== ダクト静圧計算 =====
    直管：ダルシー・ワイスバッハ式 ΔP＝λ/De・ρv²/2・L、λ はコールブルック式（ε＝0.18mm、ν＝1.6×10⁻⁵m²/s、ρ＝1.2kg/m³）
@@ -1068,6 +1127,11 @@ const TSD={sizes:[13,16,20,25,30,40,50,65,75,100,125,150],
 //  VS：エスロンTS継手 バルブ用ソケット（インサートなし）W-TS-017 の L（全長）、受口長さℓ：HI-TS継手・ゴールド承認図（JIS K 6743）
 const VPV={13:15,16:15,20:20,25:25,30:32,40:40,50:50,65:65,75:80,100:100};
 const TSVS={13:[50,26],16:[54,30],20:[64,35],25:[71,40],30:[80,44],40:[92,55],50:[106,63],65:[119,61],75:[128,64],100:[157,84]};
+// 金属おねじ付（インサート）バルブ用ソケット IVS：エスロン HI-TS継手・ゴールド インサートバルブソケットⅠ型 製作図の全長L（13〜50）。受口長さはTSと同じ
+const TSIVS={13:[60,26],16:[65,30],20:[75,35],25:[85,40],30:[95,44],40:[110,55],50:[125,63]};
+function ivsOf(n){if(!n||!n.comp||n.comp.conn!=="th"||!VAUTO.includes(n.comp.t)||ptNd(n)!=="ts")return null;const sz=nodeSize(n.id),A=VPV[sz];if(!A)return null;
+  const m=TSIVS[sz]||TSVS[sz];if(!m)return null;const e=aOf_(A);return {A,Lv:m[0],lv:m[1],e,ext:m[0]-e,metal:!!TSIVS[sz]};}
+const aOf_=sz=>{const i=TH.sizes.indexOf(+sz);return i<0?15:TH.a[i];};
 // 積水 エスロンDV継手（JIS K 6739）Z、90°Y：本管Z1・枝Z3
 const DVD={sizes:[30,40,50,65,75,100,125,150],
   e90:[22,27,33,42,48,62,75,88], e45:[12,14,18,22,25,30,38,44],
@@ -1131,8 +1195,8 @@ function solve(){
         const H=REDW[ri.big]; return H?{v:H/2+gv,t:`${H}/2${gv?"+"+gv:""}`}:{v:NaN,t:"H?"};}
       if(isFaceComp(c)){const ei=endInfo(c,pt,size),e=ei.v;if(isNaN(e))return {v:NaN,t:"管端処理?"+ei.t};return {v:e,t:`面まで−引込み${fmt(e)}（${ENDT[endType(c,pt)]}：${ei.t}${c.conn==="fl"?"・パッキン"+gk+"は寸法外":""}）`};}
       if(pt==="sus"&&c.conn==="th"&&!c.face&&(c.t==="gate"||c.t==="ball")){const v=NJD[c.t][size];return v==null?{v:NaN,t:"ℓ1?"}:{v,t:`ℓ1 ${v}（NJX）`};}
-      if(pt==="ts"&&c.conn==="th"&&VPV[size]&&TSVS[size]){const A=VPV[size],F=faceOf(c,A,"th").v,e=aOf(A),[Lv,lv]=TSVS[size];if(isNaN(F))return {v:NaN,t:"面間?"};
-        return {v:F/2-e+(Lv-lv),t:`${F}/2−ねじ込み${fmt(e)}＋バルブ用ソケット(L${Lv}−受口${lv})`};}
+      if(pt==="ts"&&c.conn==="th"&&VPV[size]&&(TSIVS[size]||TSVS[size])){const A=VPV[size],F=faceOf(c,A,"th").v,e=aOf(A),[Lv,lv]=TSIVS[size]||TSVS[size];if(isNaN(F))return {v:NaN,t:"面間?"};
+        return {v:F/2-e+(Lv-lv),t:`${F}/2−ねじ込み${fmt(e)}＋${TSIVS[size]?"金属おねじ付バルブ用ソケット":"バルブ用ソケット"}(L${Lv}−受口${lv})`};}
       if(pt==="ts"||pt==="dv") return {v:NaN,t:"塩ビ管のフランジ弁は未対応（ねじ込み弁＋バルブ用ソケットで配置）"};
       const F=faceOf(c,size,pt).v; if(isNaN(F)) return {v:NaN,t:"面間?"};
       return {v:F/2-a,t:`${F}/2−${fmt(a)}`};
@@ -1276,7 +1340,7 @@ function drawSVG(sol,P,T,opt={}){
   // 部材ラベル
   const compLbl={};
   M.nodes.forEach(n=>{if(!P[n.id]||!n.comp)return;const p=T(P[n.id]);const c=sol.con[n.id];let u=[1,0];if(c&&c[0])u=SV[c[0].s.dir];
-    if(n.comp.noLab)return;const txt=n.comp.label?esc(n.comp.label)+(needTag(n.comp.t)?CTAG[n.comp.conn]||"":""):n.comp.t==="reducer"?(()=>{const ri=redInfo(n.id);return ri?`R ${ri.big}×${ri.small}`:"R";})():(n.comp.t==="flex"?FLEXSER[n.comp.series||"sk10"].ab:PARTS[n.comp.t][1])+(needTag(n.comp.t)?CTAG[n.comp.conn]||"":"")+(isCore(n.comp,ptNd(n))?"(コア)":"")+(ptNd(n)==="ts"&&n.comp.conn==="th"&&VPV[nodeSize(n.id)]&&VAUTO.includes(n.comp.t)?" "+VPV[nodeSize(n.id)]+"A＋VS":"")+(!["flange","socket","cap","reducer"].includes(n.comp.t)&&!isFaceComp(n.comp)&&!isNaN(faceOf(n.comp,nodeSize(n.id)).v)?" "+faceOf(n.comp,nodeSize(n.id)).v:"")+(n.comp.t==="flange"?" t"+gasket(nodeSize(n.id)):"");
+    if(n.comp.noLab)return;const txt=n.comp.label?esc(n.comp.label)+(needTag(n.comp.t)?CTAG[n.comp.conn]||"":""):n.comp.t==="reducer"?(()=>{const ri=redInfo(n.id);return ri?`R ${ri.big}×${ri.small}`:"R";})():(n.comp.t==="flex"?FLEXSER[n.comp.series||"sk10"].ab:PARTS[n.comp.t][1])+(needTag(n.comp.t)?CTAG[n.comp.conn]||"":"")+(isCore(n.comp,ptNd(n))?"(コア)":"")+(ivsOf(n)?" "+ivsOf(n).A+"A＋"+(ivsOf(n).metal?"IVS":"VS"):"")+(!["flange","socket","cap","reducer"].includes(n.comp.t)&&!isFaceComp(n.comp)&&!isNaN(faceOf(n.comp,nodeSize(n.id)).v)?" "+faceOf(n.comp,nodeSize(n.id)).v:"")+(n.comp.t==="flange"?" t"+gasket(nodeSize(n.id)):"");
     const w=tw(txt.replace(/&[a-z]+;/g,"x"),11)+4,hh=14,nn=[-u[1],u[0]];
     const cands=[];[22,34,48].forEach(d=>{[1,-1].forEach(sg=>cands.push([p[0]+nn[0]*d*sg,p[1]+nn[1]*d*sg]));});[[28,18],[-28,18],[28,-18],[-28,-18]].forEach(([a_,b_])=>cands.push([p[0]+u[0]*a_+nn[0]*b_,p[1]+u[1]*a_+nn[1]*b_]));
     cands.sort((A,B)=>A[1]-B[1]>0?0:0);
@@ -1405,6 +1469,8 @@ function drawSVG(sol,P,T,opt={}){
     if(n.comp){const c=sol.con[n.id]; let u=[1,0]; if(c&&c[0]){u=SV[c[0].s.dir]; if(n.comp.t==="cap"){const w=proj(-c[0].v[0],-c[0].v[1],-c[0].v[2]),l=Math.hypot(w[0],w[1]);u=[w[0]/l,w[1]/l];}}
       let cc_=n.comp; if(n.comp.t==="reducer"){const ri=redInfo(n.id); if(ri){u=SV[ri.s1.dir]; cc_={...n.comp,_bigFirst:szOf(ri.s1)>=szOf(ri.s2)};}}
       if(!(DISP.solid&&(DPARTS.includes(cc_.t)||SOLIDC.includes(cc_.t))))g+=symbol(cc_,p,u,pc,ROTT.includes(cc_.t)?compHandleScr(n):null);
+      if(!DISP.solid&&ivsOf(n)){const nn=[-u[1],u[0]];[-1,1].forEach(sd=>{const c0=[p[0]+u[0]*sd*15,p[1]+u[1]*sd*15],c1=[p[0]+u[0]*sd*24,p[1]+u[1]*sd*24],h=4.5;
+        g+=`<polygon points="${[[c0[0]+nn[0]*h,c0[1]+nn[1]*h],[c1[0]+nn[0]*h,c1[1]+nn[1]*h],[c1[0]-nn[0]*h,c1[1]-nn[1]*h],[c0[0]-nn[0]*h,c0[1]-nn[1]*h]].map(z=>z[0].toFixed(1)+","+z[1].toFixed(1)).join(" ")}" fill="${PAL.bg}" stroke="${pc}" stroke-width="1.4"/>`;});}
       const L_=compLbl[n.id]; if(L_) g+=`<text x="${L_.x}" y="${L_.y+4}" font-size="11" font-weight="700" text-anchor="middle" fill="${blue}">${L_.txt}</text>`;
     } else if(DISP.solid&&f!=="none"&&f!=="straight"){}
     else if(f!=="none"&&M.segs.some(x=>isDuct(x)&&(x.a===n.id||x.b===n.id))){}
@@ -1549,7 +1615,9 @@ function rotEnter(n){ROTM=n.id;if(!$("rotBar")){const b=document.createElement("
   $("rbL").onclick=()=>{const m=node(ROTM);if(m)rotateComp(m,-1);};$("rbR").onclick=()=>{const m=node(ROTM);if(m)rotateComp(m,1);};$("rbOK").onclick=rotExit;
   ["rbL","rbR","rbOK"].forEach(k=>$(k).addEventListener("pointerdown",e=>e.stopPropagation()));render();}
 function rotExit(){ROTM=null;rtap=null;const b=$("rotBar");if(b)b.remove();render();toast("向きを確定");}
-function overlayHTML(){let g="";rotHit=null;if(ROTM&&LAST.P[ROTM]){const q=toScr(LAST.P[ROTM]);g+=`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="58" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-dasharray="7 5"/>`;}
+function overlayHTML(){let g="";rotHit=null;
+  (window.__loose||[]).forEach(id=>{if(!LAST.P[id])return;const q=toScr(LAST.P[id]);g+=`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="13" fill="none" stroke="#f59f00" stroke-width="3" stroke-dasharray="5 3"/>`;});
+  if(drawing&&stroke.length>4){const e=stroke[stroke.length-1],tg=endTarget(e,new Set(),new Set(drawSnap?[drawSnap.id]:[]));if(tg){const q=tg.k==="n"?toScr(LAST.P[tg.n.id]):(()=>{const A=toScr(LAST.P[tg.s.a]),B=toScr(LAST.P[tg.s.b]);return [A[0]+(B[0]-A[0])*tg.t,A[1]+(B[1]-A[1])*tg.t];})();g+=`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="14" fill="rgba(34,197,94,.18)" stroke="#16a34a" stroke-width="3"/>`;}}if(ROTM&&LAST.P[ROTM]){const q=toScr(LAST.P[ROTM]);g+=`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="58" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-dasharray="7 5"/>`;}
   if(sel&&sel.k==="n"&&mode==="sel"){const n=node(sel.id);if(n&&n.comp&&ROTT.includes(n.comp.t)&&LAST.P[n.id]){const hv=rotHandleDir(n);if(hv){const p0=toScr(LAST.P[n.id]),R_=DPARTS.includes(n.comp.t)?46:38,c=[p0[0]+hv[0]*R_,p0[1]+hv[1]*R_],a=Math.atan2(hv[1],hv[0]),tri=[[0,9],[-8,-6],[8,-6]].map(([x,y])=>lastPT==="mouse"?[x,y]:[x*1.5,y*1.5]).map(([x,y])=>{const ca=Math.cos(a-Math.PI/2),sa=Math.sin(a-Math.PI/2);return [c[0]+x*ca-y*sa,c[1]+x*sa+y*ca];});
     rotHit={x:c[0],y:c[1],id:n.id};g+=`<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${lastPT==="mouse"?15:24}" fill="rgba(34,197,94,.15)"/><polygon points="${tri.map(q=>q[0].toFixed(1)+","+q[1].toFixed(1)).join(" ")}" fill="#22c55e" stroke="#15803d" stroke-width="1.2"/>`;}}}if(drawing&&drawSnap&&LAST.P[drawSnap.id]){const q=toScr(LAST.P[drawSnap.id]);g+=`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="13" fill="rgba(34,197,94,.18)" stroke="#16a34a" stroke-width="2.5"/><circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="3.5" fill="#16a34a"/>`;}
   if(mode==="sel"&&sel&&sel.k==="s"&&LAST.P){const s=seg(sel.id);if(s&&LAST.P[s.a]&&LAST.P[s.b]){const A=toScr(LAST.P[s.a]),B=toScr(LAST.P[s.b]),m=[(A[0]+B[0])/2,(A[1]+B[1])/2];
@@ -1620,7 +1688,9 @@ function autoTee(){let changed=[],guard=0;
   return changed;}
 function render(){if($("setPanel")&&$("setPanel").classList.contains("open")){try{renderSysList();if($("elbDef"))$("elbDef").value=M.elb||"L";}catch(_){}}if($("hint"))$("hint").textContent="";if(ROTM&&(!node(ROTM)||mode!=="sel"||!sel||sel.id!==ROTM)){ROTM=null;rtap=null;const b=$("rotBar");if(b)b.remove();}
   {const ch=autoTee();if(ch.length)setTimeout(()=>toast(`配管の途中に乗っていた点をTにした（${[...new Set(ch)].join("・")}）`),50);}
-  CROSS=findCrossings(); paintMain(true); const sol=LAST.sol;
+  let P3_=null;try{P3_=layout3();}catch(_){}CROSS=findCrossings(); paintMain(true); const sol=LAST.sol;
+  window.__loose=P3_?looseEnds(P3_):[];if(window.__loose.length)sol.warn.unshift(`重なってるのにつながってない管端：${window.__loose.slice(0,5).map(id=>"P"+id).join("、")}（オレンジの輪。赤点を相手にドラッグして連結）`);
+  if(window.__loopBad&&window.__loopBad.length){const L_=window.__loopBad;sol.warn.unshift(`ループの寸法が合わない：${L_.slice(0,4).map(x=>`区間${idx(x.s)}（${x.dev>0?"+":""}${Math.round(x.dev)}mm）`).join("、")}${L_.length>4?" ほか":""}。どこかの寸法を空欄（≈）にすると、そこで吸収する`);}
   CROSS.forEach(c=>sol.warn.unshift(`区間${idx(c.a)}と区間${idx(c.b)}が${c.k==="貫通"?"同じ高さで交差（配管が突き抜けている）":"同じ線上で重なっている"}。Tでつなぐか、高さ・位置をずらす`));
 
   $("bPasteMode").style.display=clip?"":"none";
@@ -1827,7 +1897,7 @@ function materials(sol){const rows={};const add=(cat,name,spec,q,unit)=>{const k
       else if(["socket","cap","union"].includes(t))add("継手",`${L} ${c.label||PARTS[t][0]}`,fs,1,"個");
       else if(t==="flange")add("継手",`${L} ${c.label||"フランジ"}`,`JIS 10K（${ENDT[endType(c,pt)]}）`,2,"枚");
       else if(t==="flex")add("弁・機器",`${L} ${c.label||FLEXSER[c.series||"sk10"].name}`,`${CFORM[c.conn]||""}${isNaN(F)?"":"　面間"+F}`,1,"台");
-      else if(pt==="ts"&&c.conn==="th"&&VPV[nsz]){const A=VPV[nsz],ns_=M.segs.filter(x=>x.a===n.id||x.b===n.id).length;add("弁・機器",`${A}A ${c.label?c.label+"（"+PARTS[t][0]+"）":PARTS[t][0]}`,`${CFORM[c.conn]||""}　面間${F}（VP${nsz}に取付）`,1,"台");add("継手",`${lab(nsz,"ts")} バルブ用ソケット（VS）`,`TS継手 VP${nsz}×${RNAME[A]||A+"A"}おねじ`,ns_,"個");}
+      else if(pt==="ts"&&c.conn==="th"&&VPV[nsz]){const A=VPV[nsz],ns_=M.segs.filter(x=>x.a===n.id||x.b===n.id).length;add("弁・機器",`${A}A ${c.label?c.label+"（"+PARTS[t][0]+"）":PARTS[t][0]}`,`${CFORM[c.conn]||""}　面間${F}（VP${nsz}に取付）`,1,"台");add("継手",`${lab(nsz,"ts")} ${TSIVS[nsz]?"金属おねじ付バルブ用ソケット（IVS）":"バルブ用ソケット（VS）"}`,`TS継手 VP${nsz}×${RNAME[A]||A+"A"}${TSIVS[nsz]?"　黄銅インサートおねじ":"おねじ"}　L${(TSIVS[nsz]||TSVS[nsz])[0]}`,ns_,"個");}
       else add("弁・機器",`${L} ${c.label?c.label+"（"+PARTS[t][0]+"）":PARTS[t][0]}${isCore(c,pt)?"（コア内蔵）":""}`,`${isCore(c,pt)?"管端防食コア内蔵 ":""}${CFORM[c.conn]||""}${c.conn==="fl"?" JIS 10K":""}${isNaN(F)?"":"　面間"+F}`,1,"台");
       const gk=gasket(nsz),bolt=sz=>{const b=JBOLT[sz];if(b)add("継手",`${sz}A ボルト・ナット`,`${b[1]}（JIS 10K ${b[0]}本／1か所）`,b[0],"組");};
       if(t==="flange"){add("継手",`${L} ガスケット`,`フランジ用ガスケット t${gk}`,1,"枚");bolt(nsz);}
@@ -3005,7 +3075,7 @@ const ptNd=n=>ptOf(M.segs.find(x=>x.a===n.id||x.b===n.id));
 const SOLIDC=["gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz","flex","flange","union","socket","reducer"];
 function compGeoLen(n){const c=n.comp,sz=nodeSize(n.id),od=odOf(sz,ptNd(n));if(c.t==="flange")return gasket(sz)+40;
   if(["union","socket"].includes(c.t))return od*(c.t==="union"?1.3:1.1);if(c.t==="reducer")return Math.max(od*1.4,60);
-  const v=faceOf(c,sz).v;return (isNaN(v)?od*2.6:v)+(c.conn==="fl"?2*gasket(sz):0);}
+  const v=faceOf(c,sz).v,iv=ivsOf(n);return (isNaN(v)?od*2.6:v)+(c.conn==="fl"?2*gasket(sz):0)+(iv?2*iv.ext:0);}
 // ===== 部材の立体メッシュ：回転体・トーラス・箱を面ごとに陰影を付けて描く（裏面は描かない）
 const JFT={15:12,20:14,25:14,32:16,40:16,50:16,65:18,80:18,100:18,125:20,150:22,200:22,250:24,300:24,350:26};       // フランジ厚（目安）
 const JPCD={15:70,20:75,25:90,32:100,40:105,50:120,65:140,80:150,100:175,125:210,150:240,200:290,250:355,300:400,350:445}; // JIS B 2220 10K ボルト穴中心円径
@@ -3030,7 +3100,7 @@ const vhOf=(c,sz,pt)=>{if(c&&c.conn==="th"&&VHSK[c.t]&&(pt||curPT())==="vth"&&VH
 function compSolid(n,P,T,dep,items,ink,on){const c=n.comp,ss=M.segs.filter(x=>(x.a===n.id||x.b===n.id)&&!isDuct(x));if(!ss.length||!P[n.id])return;
   let s0=ss[0];if(c.t==="reducer"){const ri=redInfo(n.id);if(ri)s0=ri.s1;}
   const C=P[n.id],oth=P[s0.a===n.id?s0.b:s0.a];if(!oth)return;let u=nrm3(C.map((v,i)=>v-oth[i]));if(ss.length===1)u=u.map(v=>-v);
-  const w=handleW(u,c.rot),v3=crs3(u,w),sz=nodeSize(n.id),pt=ptNd(n),r=odOf(sz,pt)/2,L=compGeoLen(n),F=[];
+  const IV=ivsOf(n),w=handleW(u,c.rot),v3=crs3(u,w),sz=nodeSize(n.id),pt=ptNd(n),r=odOf(sz,pt)/2,L=compGeoLen(n)-(IV?2*IV.ext:0),F=[];
   const at=(t,o=0,q=0)=>[0,1,2].map(i=>C[i]+u[i]*t+w[i]*o+v3[i]*q);
   const fl=c.conn==="fl",th=c.conn==="th",gk0=(fl&&!flNoGk(c))?gasket(sz):0,Lb=L-2*gk0,FD=(JFD[sz]||r*4)/2,tf=JFT[sz]||Math.max(12,FD*0.12),pcd=(JPCD[sz]||FD*1.55)/2,bt=JBOLT[sz]||[4,"M16"],br=+bt[1].slice(1)/2;
   const body=on?"#7cc4ff":th&&pt!=="sus"?MCOL.br:pt==="sus"?MCOL.sus:MCOL.fc,vh=vhOf(c,sz,pt);
@@ -3048,6 +3118,8 @@ function compSolid(n,P,T,dep,items,ink,on){const c=n.comp,ss=M.segs.filter(x=>(x
   const wheel=(h,Dw)=>{const R=Dw/2,tb=Math.max(2.5,Dw*0.045),Cw=at(0,h);mTorus(F,Cw,w,u,R-tb,tb,HC,32,7);mCyl(F,at(0,h-tb*2.5),at(0,h+tb*1.6),Math.max(5,r*0.35),HC,12);
     for(let k=0;k<3;k++){const a=2*Math.PI*k/3+0.3,d=[0,1,2].map(i=>u[i]*Math.cos(a)+v3[i]*Math.sin(a));mCyl(F,Cw.map((v,i)=>v+d[i]*Math.max(5,r*0.35)),Cw.map((v,i)=>v+d[i]*(R-tb)),tb*0.7,HC,6);}
     mRev(F,at(0,h+tb*1.6),w,u,[[0,0],[0,Math.max(3,r*0.2)],[tb*1.6,Math.max(3,r*0.2)],[tb*1.6,0]],MCOL.st,6,0);};
+  if(IV)[-1,1].forEach(sd=>{const x0=sd*L/2,hx=sd*(L/2+Math.min(10,IV.ext*0.25)),x1=sd*(L/2+IV.ext),pr=(a,b_,R_)=>sd>0?[[a,0],[a,R_],[b_,R_],[b_,0]]:[[b_,0],[b_,R_],[a,R_],[a,0]];
+    revU(pr(x0,hx,r*1.38),"#d4b04a",6,0);revU(pr(hx,x1,r*1.26),"#9aa3ad",20);});   // 金属おねじ付バルブ用ソケット：黄銅の六角＋塩ビ受口
   switch(c.t){
     case "gate":case "globe":{ends();const pk=c.t==="globe"?2.15:1.8,b0=-Lb/2+e0,b1=Lb/2-e0;revU([[b0,r*1.2],[b0+(b1-b0)*0.2,r*pk*0.82],[0,r*pk],[b1-(b1-b0)*0.2,r*pk*0.82],[b1,r*1.2]]);
       const H=vh?vh[0]:r*(c.t==="gate"?5.2:4.2),Dw=vh&&vh[1]?vh[1]:Math.max(r*3.2,60),b2=r*pk*0.95;
@@ -3164,6 +3236,7 @@ function sched3D(){clearTimeout(t3s);t3s=setTimeout(()=>build3D().catch(e=>{$("v
 function layout3(){syncEq(); // 実寸（芯芯。未入力は手描き仮）で配置
   const P={};M.nodes.forEach(n=>{if(n.root)P[n.id]=n.root.slice();});let ch=true,g=0;
   while(ch&&g++<1000){ch=false;for(const s of M.segs){if(P[s.a]&&!P[s.b]){const d=DIRS[s.dir],L=(s.cc??s.est)+(faceLen(node(s.a))+faceLen(node(s.b)))/2,a=P[s.a];P[s.b]=[a[0]+d[0]*L,a[1]+d[1]*L,a[2]+d[2]*L];ch=true;}}}
+  try{window.__loopBad=relaxLoops(P,s=>(s.cc??s.est)+(faceLen(node(s.a))+faceLen(node(s.b)))/2,true);}catch(e){console.error(e);window.__loopBad=[];}
   return P;}
 function init3(){const box=$("v3"),R_=new THREE.WebGLRenderer({antialias:true});R_.setPixelRatio(Math.min(2,window.devicePixelRatio||1));box.prepend(R_.domElement);
   const sc=new THREE.Scene();sc.background=new THREE.Color(0x0e1116);
@@ -3243,7 +3316,7 @@ $("warnBadge").onclick=()=>$("warn").scrollIntoView({behavior:"smooth"});
 const HELP=[
  ["基本の流れ",`<ol><li><b>描く</b>（鉛筆）で線をざっと引く → 角で曲げればエルボ、配管の途中や点から引けばT分岐。</li><li><b>選択</b>（矢印）で配管をタップ → テンキーで芯芯寸法。</li><li><b>部材</b>で「形を見て選ぶ」→ 配管をタップして入れる。</li><li>右上の「出力」の <b>アイソメ／計算書／アイソメ＋計算書</b> を押すとプレビューが開く → 「PDFで送る」「PDF保存」「印刷」。</li></ol>`],
  ["指・ペンの操作（iPad）",`<ul><li>指1本ドラッグ＝画面移動、ピンチ＝拡大縮小、<b>2本指タップ＝戻す</b>。</li><li>Apple Pencil を使うと、ペン＝描く／指＝選択・移動 に自動で切替わる。</li><li>描くモードではタップしても何も起きない（誤操作防止）。</li></ul>`],
- ["端部から続けて描く",`<ul><li>選択モードで <b>赤い点（管端）</b> か機器の接続口をタップ → 自動で描くモードになり、その端部の管種・口径（ダクトは角/丸・寸法・用途・工法）を引き継ぐ。</li><li>そのまま端部からなぞれば続きが描ける。少し外れても端部に吸着する。</li><li>同じ向き・同じ仕様で続けた分は <b>1本の配管にまとまる</b>（1000＋500→1500）。</li><li>赤い点をドラッグして別の配管や点の上で離す＝連結。</li></ul>`],
+ ["端部から続けて描く",`<ul><li>選択モードで <b>赤い点（管端）</b> か機器の接続口をタップ → 自動で描くモードになり、その端部の管種・口径（ダクトは角/丸・寸法・用途・工法）を引き継ぐ。</li><li>そのまま端部からなぞれば続きが描ける。少し外れても端部に吸着する。</li><li>同じ向き・同じ仕様で続けた分は <b>1本の配管にまとまる</b>（1000＋500→1500）。</li><li>赤い点をドラッグして別の配管や点の上で離す＝連結。</li><li><b>描き終わりも吸着</b>：線を引いて既存の管端・点・機器の口・配管の上で離すとそこにつながる（配管の途中ならT分岐）。緑の輪が出たらつながる合図。</li><li>つながって輪（ループ）になった配管も、寸法を入れれば形がついてくる。合わない分は「≈」（寸法未入力）の区間が吸収する。全部入れて合わない時は警告に「区間○（±○mm）」と出る。</li><li>重なってるのにつながってない管端はオレンジの輪で出る。</li></ul>`],
  ["寸法",`<ul><li>配管を選んでテンキーで芯芯。黄色の「≈」は手描きからの仮の長さ。</li><li>上のバーの「芯芯／切寸法／両方」で表示切替。</li><li>部材（黄◆）をドラッグ＝配管に沿って移動（前後の合計は固定）。選んだ配管をドラッグ＝ルート移動。</li></ul>`],
  ["部材・ハンドルの向き",`<ul><li>弁やダンパーを選ぶと緑の▼が出る。▼（または右の「ハンドル・操作部を回す」）を押すと<b>回転中</b>になり、<b>画面のどこをタップしても</b>45°（角ダクトのダンパーは90°）ずつ回る。上のバーの「決定」で終了。</li><li>回転中も指ドラッグ・ピンチで画面は動かせる。</li></ul>`],
  ["系統・色",`<ul><li>配管を選んで右の欄の「系統」→「＋ 新しい系統…」で名前（CS・CR など）を付けると、<b>つながってる配管に丸ごと付与</b>される（機器の接続口で止まる）。</li><li>系統名は口径の横に「65A CS」の形で出る。色は「図面情報・条件」→「系統」で CAD と同じ基本16色・カラーインデックスから選べる。</li></ul>`],
