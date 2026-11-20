@@ -469,7 +469,7 @@ const FLEXSER={
   tfx:{name:"テクノフレックス F115（SUSブレード・フランジ）",ab:"SUS",conn:["fl"],L:Object.fromEntries([20,25,32,40,50,65,80,100,125,150,200,250,300].map(z=>[z,300])),src:"新菱 空気調和設備施工基準（配管）AP4-4-1 防振継手の標準仕様比較：F115 面間300（50A・150A）。他の口径も300で仮置き（長さ違いは上書き）"},
   bj:{name:"テクノフレックス ビックジョイント（ベローズ形）",ab:"BJ",conn:["fl"],L:Object.fromEntries([50,65,80,100,125,150,200].map(z=>[z,150])),src:"新菱 空気調和設備施工基準（配管）AP4-4-1：ビックジョイント 面間150（50A・150A）。他の口径は150で仮置き"}
 };
-function faceOf(c,sz,pt){ sz=sz||M.size; pt=pt||curPT(); if(c.face!==""&&c.face!=null&&!isNaN(parseFloat(c.face))) return {v:parseFloat(c.face),src:"手入力"};
+function faceOf(c,sz,pt){ sz=sz||M.size; pt=pt||curPT(); if((ptRes(pt,sz)==="ts"||ptRes(pt,sz)==="dv")&&VPV[sz]&&c&&c.conn==="th")sz=VPV[sz]; if(c.face!==""&&c.face!=null&&!isNaN(parseFloat(c.face))) return {v:parseFloat(c.face),src:"手入力"};
   if(pt==="vth"&&VFSK[c.t]&&VFSK[c.t][c.conn]){const v=VFSK[c.t][c.conn][sz];if(v)return {v,src:VSRCSK[c.t][c.conn]};}
   if(c.t==="flex"){const S=FLEXSER[c.series||"sk10"]; const v=S.L?S.L[sz]:undefined; return v?{v,src:S.src}:{v:NaN,src:null};}
   const t=VF[c.t]&&VF[c.t][c.conn]; const v=t?t[sz]:undefined; return v?{v,src:VSRC[c.t][c.conn]}:{v:NaN,src:null}; }
@@ -1064,6 +1064,10 @@ const TSD={sizes:[13,16,20,25,30,40,50,65,75,100,125,150],
   tee:[10,13,15,18,21,27,33,49,56,68,83,98], sock:[5,7,7,7,7,7,7,23,27,32,24,36],
   rtee:{"16x13":[11,12],"20x13":[11,14],"20x16":[13,15],"25x13":[12,18],"25x16":[13,16],"25x20":[15,18],"30x13":[11,21.5],"30x16":[13,21.5],"30x20":[15,20],"30x25":[18,21],"40x13":[11,26],"40x16":[13,25],"40x20":[17,27],"40x25":[18,27],"40x30":[21,27],"50x13":[11,32],"50x16":[13,33],"50x20":[15,33],"50x25":[18,33],"50x30":[21,33],"50x40":[27,33],"65x50":[40,41],"75x25":[29,48],"75x40":[36,47],"75x50":[41,47],"75x65":[49,56],"100x50":[41,59],"100x75":[56,68],"125x100":[69,83],"150x75":[63,94],"150x100":[76,98],"150x125":[85,97]},
   red:{"16x13":5,"20x13":7,"20x16":6,"25x13":20,"25x16":15,"25x20":9,"30x13":25,"30x20":14,"30x25":9,"40x20":23,"40x25":19,"40x30":15,"50x20":18,"50x25":37,"50x30":29,"50x40":18,"65x50":25,"75x50":38,"75x65":34,"100x75":42,"125x100":41,"150x100":79,"150x125":36}};
+// VP（TS）のねじ込み弁：両側にバルブ用ソケット（VS）。弁の口径＝VSのねじの呼び（VP13・16→15A、30→32A、75→80A）
+//  VS：エスロンTS継手 バルブ用ソケット（インサートなし）W-TS-017 の L（全長）、受口長さℓ：HI-TS継手・ゴールド承認図（JIS K 6743）
+const VPV={13:15,16:15,20:20,25:25,30:32,40:40,50:50,65:65,75:80,100:100};
+const TSVS={13:[50,26],16:[54,30],20:[64,35],25:[71,40],30:[80,44],40:[92,55],50:[106,63],65:[119,61],75:[128,64],100:[157,84]};
 // 積水 エスロンDV継手（JIS K 6739）Z、90°Y：本管Z1・枝Z3
 const DVD={sizes:[30,40,50,65,75,100,125,150],
   e90:[22,27,33,42,48,62,75,88], e45:[12,14,18,22,25,30,38,44],
@@ -1127,7 +1131,9 @@ function solve(){
         const H=REDW[ri.big]; return H?{v:H/2+gv,t:`${H}/2${gv?"+"+gv:""}`}:{v:NaN,t:"H?"};}
       if(isFaceComp(c)){const ei=endInfo(c,pt,size),e=ei.v;if(isNaN(e))return {v:NaN,t:"管端処理?"+ei.t};return {v:e,t:`面まで−引込み${fmt(e)}（${ENDT[endType(c,pt)]}：${ei.t}${c.conn==="fl"?"・パッキン"+gk+"は寸法外":""}）`};}
       if(pt==="sus"&&c.conn==="th"&&!c.face&&(c.t==="gate"||c.t==="ball")){const v=NJD[c.t][size];return v==null?{v:NaN,t:"ℓ1?"}:{v,t:`ℓ1 ${v}（NJX）`};}
-      if(pt==="ts"||pt==="dv") return {v:NaN,t:"塩ビ管のバルブ取合い未対応（フランジ形で配置）"};
+      if(pt==="ts"&&c.conn==="th"&&VPV[size]&&TSVS[size]){const A=VPV[size],F=faceOf(c,A,"th").v,e=aOf(A),[Lv,lv]=TSVS[size];if(isNaN(F))return {v:NaN,t:"面間?"};
+        return {v:F/2-e+(Lv-lv),t:`${F}/2−ねじ込み${fmt(e)}＋バルブ用ソケット(L${Lv}−受口${lv})`};}
+      if(pt==="ts"||pt==="dv") return {v:NaN,t:"塩ビ管のフランジ弁は未対応（ねじ込み弁＋バルブ用ソケットで配置）"};
       const F=faceOf(c,size,pt).v; if(isNaN(F)) return {v:NaN,t:"面間?"};
       return {v:F/2-a,t:`${F}/2−${fmt(a)}`};
     }
@@ -1270,7 +1276,7 @@ function drawSVG(sol,P,T,opt={}){
   // 部材ラベル
   const compLbl={};
   M.nodes.forEach(n=>{if(!P[n.id]||!n.comp)return;const p=T(P[n.id]);const c=sol.con[n.id];let u=[1,0];if(c&&c[0])u=SV[c[0].s.dir];
-    if(n.comp.noLab)return;const txt=n.comp.label?esc(n.comp.label)+(needTag(n.comp.t)?CTAG[n.comp.conn]||"":""):n.comp.t==="reducer"?(()=>{const ri=redInfo(n.id);return ri?`R ${ri.big}×${ri.small}`:"R";})():(n.comp.t==="flex"?FLEXSER[n.comp.series||"sk10"].ab:PARTS[n.comp.t][1])+(needTag(n.comp.t)?CTAG[n.comp.conn]||"":"")+(isCore(n.comp,ptNd(n))?"(コア)":"")+(!["flange","socket","cap","reducer"].includes(n.comp.t)&&!isFaceComp(n.comp)&&!isNaN(faceOf(n.comp,nodeSize(n.id)).v)?" "+faceOf(n.comp,nodeSize(n.id)).v:"")+(n.comp.t==="flange"?" t"+gasket(nodeSize(n.id)):"");
+    if(n.comp.noLab)return;const txt=n.comp.label?esc(n.comp.label)+(needTag(n.comp.t)?CTAG[n.comp.conn]||"":""):n.comp.t==="reducer"?(()=>{const ri=redInfo(n.id);return ri?`R ${ri.big}×${ri.small}`:"R";})():(n.comp.t==="flex"?FLEXSER[n.comp.series||"sk10"].ab:PARTS[n.comp.t][1])+(needTag(n.comp.t)?CTAG[n.comp.conn]||"":"")+(isCore(n.comp,ptNd(n))?"(コア)":"")+(ptNd(n)==="ts"&&n.comp.conn==="th"&&VPV[nodeSize(n.id)]&&VAUTO.includes(n.comp.t)?" "+VPV[nodeSize(n.id)]+"A＋VS":"")+(!["flange","socket","cap","reducer"].includes(n.comp.t)&&!isFaceComp(n.comp)&&!isNaN(faceOf(n.comp,nodeSize(n.id)).v)?" "+faceOf(n.comp,nodeSize(n.id)).v:"")+(n.comp.t==="flange"?" t"+gasket(nodeSize(n.id)):"");
     const w=tw(txt.replace(/&[a-z]+;/g,"x"),11)+4,hh=14,nn=[-u[1],u[0]];
     const cands=[];[22,34,48].forEach(d=>{[1,-1].forEach(sg=>cands.push([p[0]+nn[0]*d*sg,p[1]+nn[1]*d*sg]));});[[28,18],[-28,18],[28,-18],[-28,-18]].forEach(([a_,b_])=>cands.push([p[0]+u[0]*a_+nn[0]*b_,p[1]+u[1]*a_+nn[1]*b_]));
     cands.sort((A,B)=>A[1]-B[1]>0?0:0);
@@ -1821,6 +1827,7 @@ function materials(sol){const rows={};const add=(cat,name,spec,q,unit)=>{const k
       else if(["socket","cap","union"].includes(t))add("継手",`${L} ${c.label||PARTS[t][0]}`,fs,1,"個");
       else if(t==="flange")add("継手",`${L} ${c.label||"フランジ"}`,`JIS 10K（${ENDT[endType(c,pt)]}）`,2,"枚");
       else if(t==="flex")add("弁・機器",`${L} ${c.label||FLEXSER[c.series||"sk10"].name}`,`${CFORM[c.conn]||""}${isNaN(F)?"":"　面間"+F}`,1,"台");
+      else if(pt==="ts"&&c.conn==="th"&&VPV[nsz]){const A=VPV[nsz],ns_=M.segs.filter(x=>x.a===n.id||x.b===n.id).length;add("弁・機器",`${A}A ${c.label?c.label+"（"+PARTS[t][0]+"）":PARTS[t][0]}`,`${CFORM[c.conn]||""}　面間${F}（VP${nsz}に取付）`,1,"台");add("継手",`${lab(nsz,"ts")} バルブ用ソケット（VS）`,`TS継手 VP${nsz}×${RNAME[A]||A+"A"}おねじ`,ns_,"個");}
       else add("弁・機器",`${L} ${c.label?c.label+"（"+PARTS[t][0]+"）":PARTS[t][0]}${isCore(c,pt)?"（コア内蔵）":""}`,`${isCore(c,pt)?"管端防食コア内蔵 ":""}${CFORM[c.conn]||""}${c.conn==="fl"?" JIS 10K":""}${isNaN(F)?"":"　面間"+F}`,1,"台");
       const gk=gasket(nsz),bolt=sz=>{const b=JBOLT[sz];if(b)add("継手",`${sz}A ボルト・ナット`,`${b[1]}（JIS 10K ${b[0]}本／1か所）`,b[0],"組");};
       if(t==="flange"){add("継手",`${L} ガスケット`,`フランジ用ガスケット t${gk}`,1,"枚");bolt(nsz);}
@@ -1856,7 +1863,7 @@ function materials(sol){const rows={};const add=(cat,name,spec,q,unit)=>{const k
   const ord={"機器":-1,"配管":0,"継手":1,"弁・機器":2,"ダクト":3};return Object.values(rows).sort((a,b)=>ord[a.cat]-ord[b.cat]||a.name.localeCompare(b.name,"ja"));}
 // 数量表の行：品名とサイズを分ける。エルボの「90°」は書かない（45°だけ書く）
 function matRows(sol){const ord={"機器":-1,"配管":0,"継手":1,"弁・機器":2,"ダクト":3};
-  return materials(sol).map(r=>{let name=r.name,spec=r.spec||"",size="";let m=/^((?:φ)?\d+(?:\.\d+)?(?:A|Su|SU)?(?:×(?:φ)?\d+(?:A)?)?)(?:\s+|$)(.*)$/.exec(name);
+  return materials(sol).map(r=>{let name=r.name,spec=r.spec||"",size="";let m=/^((?:φ|VP|SU)?\d+(?:\.\d+)?(?:A|Su|SU)?(?:×(?:φ|VP)?\d+(?:A)?)?)(?:\s+|$)(.*)$/.exec(name);
     if(m){size=m[1];name=m[2]||"";}else if((m=/^((?:φ\d+(?:×φ\d+)?)|(?:\d+×\d+(?:→\d+×\d+)?)|(?:φ\d+→φ\d+))(?:[\s　]+|$)(.*)$/.exec(spec))){size=m[1];spec=m[2]||"";}
     if(r.cat==="配管"&&!name)name="直管";name=name.replace(/90°(LL)?エルボ/g,"$1エルボ").replace(/^径違い\s*/,"径違い").trim();
     return Object.assign({},r,{name,size,spec});})
