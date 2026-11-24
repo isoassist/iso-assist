@@ -290,6 +290,7 @@ input.tkOn{outline:2px solid #4a86ee!important}
   <h3 class="sh3">図面情報・計算条件</h3><div class="g">
       <div><label>現場名</label><input id="mSite" placeholder="例：〇〇新築工事"></div>
       <div><label>系統・図番</label><input id="mSys" placeholder="例：冷温水 3F-ISO-01"></div>
+      <div style="grid-column:1/-1"><label>特記事項（この図面だけ。図の右下の表題欄の下に出る）</label><textarea id="mNote" rows="3" style="width:100%;box-sizing:border-box" placeholder="例：排水管勾配 1/100 以上／支持は施工基準 AP7 による／スリーブは別途"></textarea></div>
       <div><label>作成者</label><input id="mAuthor" placeholder="氏名"></div>
       <div><label>会社名</label><input id="mCo" value="新菱冷熱工業㈱"></div>
       <div><label>作成日</label><input id="mDate" type="date"></div>
@@ -324,7 +325,7 @@ input.tkOn{outline:2px solid #4a86ee!important}
     <button id="bZin" class="tool" title="拡大"><svg viewBox="0 0 20 20" class="ico"><circle cx="8.5" cy="8.5" r="5"/><path d="M12.5 12.5L17 17M6.5 8.5h4M8.5 6.5v4"/></svg><span>拡大</span></button>
     <button id="bZout" class="tool" title="縮小"><svg viewBox="0 0 20 20" class="ico"><circle cx="8.5" cy="8.5" r="5"/><path d="M12.5 12.5L17 17M6.5 8.5h4"/></svg><span>縮小</span></button>
     <button id="bClear" class="tool del" title="全消去"><svg viewBox="0 0 20 20" class="ico"><path d="M5 5l10 10M15 5L5 15"/></svg><span>全消去</span></button></div>
-  <div class="rg rgc"><div class="rrow"><select id="isoJ" style="width:auto;min-width:190px" title="この図面の既定。区間ごとの変更は区間をクリック"><option value="sgp" selected>炭素鋼鋼管SGP（50A以下ねじ込み・65A以上溶接）</option><option value="vth">SGP-VA/VB/VD　管端防食継手</option><option value="ts">VP/HIVP　TS継手（給水）</option><option value="dv">VP　DV継手（排水）</option><option value="sus">SUS　ナイスジョイント（拡管式）</option></select><select id="isoSize" style="width:auto" title="新しく描く配管の呼び径"></select></div>
+  <div class="rg rgc"><div class="rrow"><select id="isoJ" style="width:auto;min-width:190px" title="この図面の既定。区間ごとの変更は区間をクリック"><option value="sgp" selected>炭素鋼鋼管SGP（50A以下ねじ込み・65A以上溶接）</option><option value="vthb">SGP-VB　管端防食継手（給水・ライニング）</option><option value="vtha">SGP-VA　管端防食継手</option><option value="vthd">SGP-VD　管端防食継手（外面被覆）</option><option value="ts">VP　TS継手（給水）</option><option value="hits">HIVP　HI-TS継手（給水）</option><option value="dv">VP　DV継手（排水）</option><option value="sus">SUS　ナイスジョイント（拡管式）</option></select><select id="isoSize" style="width:auto" title="新しく描く配管の呼び径"></select></div>
     <div class="rrow"><button data-dim="cc" class="dim">芯芯</button><button data-dim="cut" class="dim">切寸法</button><button data-dim="both" class="dim">両方</button><span class="vsep"></span><button id="tgNo" class="tg">番号</button><button id="tgSz" class="tg">口径：変化点のみ</button><button id="tgDark" class="tg" title="背景の白／黒（色は⚙で設定）">背景：白</button><button id="tgSolid" class="tg" title="配管を実際の太さ（外径）で描く／単線">表示：単線</button></div></div>
   <div class="rg rgc"><div class="rrow"><span class="plbl">視点</span><span id="rotBtns"></span></div><div class="rrow"><button id="b3d" title="下の3D確認へ（T）">3D確認 ↓</button></div></div>
 </nav>
@@ -428,7 +429,13 @@ function dirLab(k){if(k==="U")return "↑ 上へ";if(k==="D")return "↓ 下へ"
 const SV={};function computeSV(){for(const k in DIRS){const d=DIRS[k],p=proj(d[0],d[1],d[2]),l=Math.hypot(p[0],p[1]);SV[k]=[p[0]/l,p[1]/l];}if(window.upd45)upd45();}computeSV();
 
 /* ===== 部品 ===== */
-const PARTS={gate:["仕切弁","GV"],globe:["玉形弁","GLV"],ball:["ボール弁","BaV"],bfly:["バタフライ弁","BV"],check:["チャッキ（逆止弁）","CV"],wcheck:["ウイングチャッキ","WCV"],strainer:["ストレーナ","ST"],prv:["減圧弁","PRV"],rpz:["減圧式逆流防止器","RPZ"],vd:["風量調整ダンパー","VD"],fd:["防火ダンパー","FD"],sd:["防煙ダンパー","SD"],sfd:["防煙防火ダンパー","SFD"],md:["モーターダンパー","MD"],cd:["逆流防止ダンパー","CD"],cv:["たわみ継手（キャンバス）","CJ"],vav:["VAV（変風量ユニット）","VAV"],cav:["CAV（定風量ユニット）","CAV"],dpx:["圧損指定（その他）","DP"],flex:["フレキ","FX"],flange:["フランジ","FL"],union:["ユニオン","U"],socket:["ソケット","SK"],reducer:["レジューサ","R"],cap:["キャップ","CAP"],plug:["プラグ","PL"]};
+const PARTS={gate:["仕切弁","GV"],globe:["玉形弁","GLV"],ball:["ボール弁","BaV"],bfly:["バタフライ弁","BV"],check:["チャッキ（逆止弁）","CV"],wcheck:["ウイングチャッキ","WCV"],strainer:["ストレーナ","ST"],prv:["減圧弁","PRV"],rpz:["減圧式逆流防止器","RPZ"],vd:["風量調整ダンパー","VD"],fd:["防火ダンパー","FD"],sd:["防煙ダンパー","SD"],sfd:["防煙防火ダンパー","SFD"],md:["モーターダンパー","MD"],cd:["逆流防止ダンパー","CD"],cv:["たわみ継手（キャンバス）","CJ"],vav:["VAV（変風量ユニット）","VAV"],cav:["CAV（定風量ユニット）","CAV"],dpx:["圧損指定（その他）","DP"],flex:["フレキ","FX"],flange:["フランジ","FL"],union:["ユニオン","U"],socket:["ソケット","SK"],reducer:["レジューサ","R"],cap:["キャップ","CAP"],plug:["プラグ","PL"],
+  mv2:["電動二方弁","MV"],flowm:["流量計","FM"],expj:["伸縮管継手","EJ"],insj:["絶縁継手","絶縁"],trap:["ドレントラップ","TR"],
+  anemo:["アネモ形吹出口","AN"],univ:["ユニバーサル形吹出口","VHS"],line:["ライン形吹出口","LN"],grille:["吸込グリル","HS"],garari:["外壁ガラリ","OAG"],ventcap:["ベントキャップ","VC"],silch:["消音チャンバー","SC"]};
+// ダクト末端（制気口・外壁）：ダクトの管端に付ける。圧損の目安は 設計基準 AC6-9-2（制気口30Pa・アネモ50Pa）、ガラリ・ベントキャップは面風速で変わるので入力
+const DTERM=["anemo","univ","line","grille","garari","ventcap"],DTERMDP={anemo:50,univ:30,line:30,grille:30};
+// 配管の取付品（配管上の位置に付ける）：PTボス・温度計・圧力計・自動エア抜き弁・安全弁・水抜き／ダクトの点検口・測定口
+const ATT={pt:["PTボス","SK"],ti:["温度計","TI"],pi:["圧力計","PI"],av:["自動エア抜き弁","AV"],rv:["安全弁","RV"],dr:["水抜き弁","DV"],acc:["点検口","点検口"],mp:["測定口","測定口"]};
 // バルブ面間 L（mm）既定値：主要メーカーカタログ値（出典は根拠欄）。conn: th=ねじ込み, fl=フランジ10K, wf=ウェハー
 const VF={
   gate:{fl:{15:75,20:80,25:95,32:110,40:120,50:180,65:190,80:200,100:230,125:250,150:270,200:290,250:330,300:350}, th:{15:55,20:65,25:70,32:80,40:90,50:100,65:120,80:140}},// th＝キッツ L（青銅10K）
@@ -450,7 +457,7 @@ const VHSK={ball:{15:[77,85],20:[80,85],25:[85.5,115],32:[98,115],40:[103.5,115]
 const isCore=(c,pt)=>!!c&&pt==="vth"&&c.conn==="th"&&!!(VFSK[c.t]&&VFSK[c.t].th);
 const VSRCSK={gate:{th:"東洋 LJ10-BSR-SK（コア内蔵10K）"},check:{th:"東洋 LJ10-BNS-SK-N（コア内蔵10K）"},ball:{th:"ヤマト VLCSN ロングネックボールバルブ（給水用コアリング）"},strainer:{th:"ヤマト 10Y-CN Y形ストレーナ（給水用コアリング）"}};
 const VSRC={gate:{fl:"キッツ 10FCL 鋳鉄10K外ねじ仕切弁（JIS B 2002、50〜150A：KJ-10FCLS/10FCLN スペックシート）／40A以下は東洋 150-BSF-N 青銅フランジ形",th:"キッツ L（青銅10K ねじ込み）＝東洋 LJ10-BSR と同寸（JIS B 2011）"},globe:{fl:"東洋 10-DGF-N／KITZ（65・80A）",th:"東洋 10-DG-N"},ball:{fl:"KITZ 10FCTB（フルボア）"},bfly:{wf:"キッツ 10XJME（JIS B 2002 46系列、KJ-FA-10XJME スペックシート）"},strainer:{fl:"キッツ 10FCY／10FDYBF（50〜150A は KJ-10FCYN スペックシートと同寸）",th:"面間＝キッツ Y（ねじ込み）／高さH（管芯〜キャップ端）＝ベン KY-7 寸法表（大和 B10YT・D10SY と同等）。65・80Aは仮置き"},check:{th:"東洋 LJ10-BNS（JIS B 2011 青銅10K）",fl:"キッツ 10FCO 鋳鉄10Kスイング（JIS B 2031、50〜150A：KJ-10FCOU-C スペックシート）／40A・200A以上は東洋 J10-FNSF"},wcheck:{fl:"東洋 10-BNW／L10-BNW 青銅ウエハー形（衝撃吸収式）カタログNo.650"},prv:{th:"ベン RD-31N（水・温水用、ねじ込形）",fl:"ベン RD-31FN（JIS10K フランジ形、1.0MPa用。32FNは50A以上で寸法違い）"},rpz:{th:"兼工業 BX（JWWA B 134）20〜50",fl:"兼工業 BX-75（接続方式は寸法表に記載なし・要確認）"}};
-const CONNS={gate:["th","fl"],globe:["th","fl"],ball:["th","fl"],bfly:["wf"],check:["th","fl"],wcheck:["fl"],strainer:["th","fl"],prv:["th","fl"],rpz:["th","fl"],flex:["rb","fl","th"],union:["th"],socket:["th"],flange:["fl"],cap:["th"]};
+const CONNS={mv2:["th","fl"],flowm:["th","fl"],expj:["th","fl"],insj:["th","fl"],trap:["th"],gate:["th","fl"],globe:["th","fl"],ball:["th","fl"],bfly:["wf"],check:["th","fl"],wcheck:["fl"],strainer:["th","fl"],prv:["th","fl"],rpz:["th","fl"],flex:["rb","fl","th"],union:["th"],socket:["th"],flange:["fl"],cap:["th"]};
 const CONNNAME={th:"ねじ込み",fl:"フランジ(10K)",wf:"ウェハー",rb:"フランジ(ゴム面・パッキンなし)"};
 // フレキのシリーズ（面間 L）
 // 弁の高さ・ハンドル（キッツ カタログ）：H＝管芯〜上端（全開）、D＝ハンドル車径／レバー長。ストレーナはスクリーン側（1H）
@@ -469,7 +476,7 @@ const FLEXSER={
   tfx:{name:"テクノフレックス F115（SUSブレード・フランジ）",ab:"SUS",conn:["fl"],L:Object.fromEntries([20,25,32,40,50,65,80,100,125,150,200,250,300].map(z=>[z,300])),src:"新菱 空気調和設備施工基準（配管）AP4-4-1 防振継手の標準仕様比較：F115 面間300（50A・150A）。他の口径も300で仮置き（長さ違いは上書き）"},
   bj:{name:"テクノフレックス ビックジョイント（ベローズ形）",ab:"BJ",conn:["fl"],L:Object.fromEntries([50,65,80,100,125,150,200].map(z=>[z,150])),src:"新菱 空気調和設備施工基準（配管）AP4-4-1：ビックジョイント 面間150（50A・150A）。他の口径は150で仮置き"}
 };
-function faceOf(c,sz,pt){ sz=sz||M.size; pt=pt||curPT(); if((ptRes(pt,sz)==="ts"||ptRes(pt,sz)==="dv")&&VPV[sz]&&c&&c.conn==="th")sz=VPV[sz]; if(c.face!==""&&c.face!=null&&!isNaN(parseFloat(c.face))) return {v:parseFloat(c.face),src:"手入力"};
+function faceOf(c,sz,pt){ sz=sz||M.size; pt=pt||curPT(); if((ptRes(pt,sz)==="ts"||ptRes(pt,sz)==="dv")&&VPV[sz]&&c)sz=VPV[sz]; if(c.face!==""&&c.face!=null&&!isNaN(parseFloat(c.face))) return {v:parseFloat(c.face),src:"手入力"};
   if(pt==="vth"&&VFSK[c.t]&&VFSK[c.t][c.conn]){const v=VFSK[c.t][c.conn][sz];if(v)return {v,src:VSRCSK[c.t][c.conn]};}
   if(c.t==="flex"){const S=FLEXSER[c.series||"sk10"]; const v=S.L?S.L[sz]:undefined; return v?{v,src:S.src}:{v:NaN,src:null};}
   const t=VF[c.t]&&VF[c.t][c.conn]; const v=t?t[sz]:undefined; return v?{v,src:VSRC[c.t][c.conn]}:{v:NaN,src:null}; }
@@ -477,9 +484,9 @@ function defConn(t){ if(t==="flex") return "rb";const cs=CONNS[t]||["th"]; const
 // 接続形式の表記（注文ミス防止）
 const CTAG={fl:"(F)",rb:"(F)",wf:"(W)",th:""};
 const CFORM={fl:"フランジ形",rb:"フランジ形・ゴム面",wf:"ウェハー形",th:"ねじ込み形"};
-const needTag=t=>["gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz","flex","union"].includes(t);
+const needTag=t=>["mv2","flowm","expj","insj","gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz","flex","union"].includes(t);
 // フランジ取合いの部材：寸法は「部材の面」まで、部材自体の面間は別寸法
-const isFaceComp=c=>!!c&&(c.t==="flange"||["gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz","flex"].includes(c.t)&&["fl","wf","rb"].includes(c.conn));
+const isFaceComp=c=>!!c&&(c.t==="flange"||["mv2","flowm","expj","insj","gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz","flex"].includes(c.t)&&["fl","wf","rb"].includes(c.conn));
 // 部材が占める長さ：面間＋（フランジ形はパッキン2枚）。配管の寸法は自分のフランジ面まで
 function faceLen(n){if(!n||!isFaceComp(n.comp))return 0;const gk=gasket(nodeSize(n.id));if(n.comp.t==="flange")return gk;const v=faceOf(n.comp,nodeSize(n.id)).v;return (isNaN(v)?0:v)+(n.comp.conn==="fl"?2*gk:0);}
 const ENDT={th:"ねじ込みフランジ",so:"差込溶接フランジ(SOP)",fr:"つば出し（ラップ・ジャストフレア）",nj:"ナイスジョイント フランジアダプタ",njf:"ナイスジョイント F式フランジ(75〜100Su)"};
@@ -500,7 +507,7 @@ function endInfo(c,pt,sz){sz=+sz;const t=endType(c,pt);
   if(t==="so"){const w=SGPT[sz],g=+$("eSo").value||0;if(w==null)return {v:NaN,t:"肉厚なし"};return {v:w+g,t:`t${w}${g?"＋"+g:""}`};}
   const f=+$("eFr").value||0;return {v:-f,t:f?`加工代＋${f}`:"0"};}
 function endAdj(c,pt,sz){return endInfo(c,pt,sz).v;}
-const INLINE=["gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz","flex","vd","fd","sd","sfd","md","cd","flange","union","socket"];
+const INLINE=["mv2","flowm","expj","insj","trap","silch","gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz","flex","vd","fd","sd","sfd","md","cd","flange","union","socket"];
 // ソケット長さ L（CK継手 JIS B 2301）
 const SOCK={15:35,20:40,25:45,32:50,40:55,50:60,65:70,80:75,100:85,125:95,150:105};
 const gasket=sz=>(+sz>=(+$("gkSw").value||150))?(+$("gk2").value||0):(+$("gk1").value||0);
@@ -641,13 +648,13 @@ function ductBasisS(s){const d=DIRS[s.dir],L=Math.hypot(d[0],d[1],d[2])||1,u=[d[
   else{w=[-u[1],u[0],0];const k=Math.hypot(w[0],w[1]);w=[w[0]/k,w[1]/k,0];}
   const h=[u[1]*w[2]-u[2]*w[1],u[2]*w[0]-u[0]*w[2],u[0]*w[1]-u[1]*w[0]];return {u,w,h};}
 // ダンパー類（ダクト部材）。ケーシング長さは機種で違うので部材の「面間」欄で指定、空欄は仮の300
-const DPARTS=["vd","fd","sd","sfd","md","cd","cv","vav","cav","dpx"];
+const DPARTS=["vd","fd","sd","sfd","md","cd","cv","vav","cav","dpx","silch"];
 // 三功工業所：角ダンパー本体 200L（角円VD/MDの記載「200L+50+50=300」）、円の差込式は 300
 // たわみ継手：有効長さ原則150mm以上（横浜市 施工マニュアル 第3編1.10.6 注）→ 既定150。圧損指定（CAV・FU等）は既定300（仮、面間で上書き）
 // 三功工業所 標準図（共板式・低圧）：角VD L=200（R-A00C158）、角MD L=200（R-M00C246）、角CD L=200（R-C05L727）、
 //   角FD L=350（R-D02P012）、角SFD L=350（R-F02M279）、角SD L=350（R-F02M089）。円VD-Z：φ100〜250 L=250、φ275〜300 L=300（R-A00V587）
 const DLEN={vd:200,md:200,cd:200,fd:350,sfd:350,sd:350};
-const dampLen=(c,sh,D)=>{const v=parseFloat(c&&c.face);if(v>0)return v;if(!c)return 200;if(c.t==="cv")return 150;if(c.t==="dpx")return 300;if(c.t==="vav"||c.t==="cav")return sh==="c"?(D&&D<=250?450:500):400;/* 丸＝空研 丸型電子式VAV・CAV（φ150〜250 L450／φ300・350 L500）、角＝協立エアテック VAV/CAV-CW L400 */if(sh==="c")return D&&D<=250?250:300;return DLEN[c.t]||200;};
+const dampLen=(c,sh,D)=>{const v=parseFloat(c&&c.face);if(v>0)return v;if(!c)return 200;if(c.t==="cv")return 150;if(c.t==="dpx")return 300;if(c.t==="silch")return 1000;if(c.t==="vav"||c.t==="cav")return sh==="c"?(D&&D<=250?450:500):400;/* 丸＝空研 丸型電子式VAV・CAV（φ150〜250 L450／φ300・350 L500）、角＝協立エアテック VAV/CAV-CW L400 */if(sh==="c")return D&&D<=250?250:300;return DLEN[c.t]||200;};
 const dt3=(p,q)=>p[0]*q[0]+p[1]*q[1]+p[2]*q[2];
 // 角ダクトは下端でレベルを見る：横引きの角ダクトは点（線）＝ダクト下端、箱は H/2 上に描く。竪ダクトは横引き相手の高さに合わせる
 // （機器の接続口に付く区間は接続口の芯に合わせる）
@@ -746,6 +753,15 @@ function damperOps(t,C,b,d,vv,rot){let nf,hv,half;
   if(t==="vav"||t==="cav")out.push({k:"box",a:at(0,0,0),b:at(0,0,145),hw:140,hh:90,c:"#4a6fa5"});/* 制御装置：協立エアテック 丸型「145以下」 */
   if(t==="cd")out.push({k:"line",pts:[at(0,0,0),at(0,0,130)]},{k:"box",a:at(0,0,95),b:at(0,0,130),hw:25,hh:25,c:"#5b6470"});
   return {ops:out,nf,hv};}
+// 制気口・外壁（ダクト末端）の立体
+function termItems(n,P,T,items,dep){if(!n.comp||!DTERM.includes(n.comp.t)||!P[n.id])return;const sg=M.segs.find(x=>(x.a===n.id||x.b===n.id)&&isDuct(x));if(!sg)return;
+  const b=ductBasisS(sg),sgn=sg.b===n.id?1:-1,u=b.u.map(v=>v*sgn),d=sg.duct,C=P[n.id],at=t=>C.map((v,i)=>v+u[i]*t),F=[],t_=n.comp.t,col="#e9edf2";
+  const W=d.sh==="c"?+d.D:+d.W,H=d.sh==="c"?+d.D:+d.H;
+  if(t_==="anemo"){const R0=W/2;mRev(F,C,u,b.w,[[0,R0*1.05],[30,R0*1.9],[40,R0*1.9],[40,0]],col,28);mRev(F,at(40),u,b.w,[[0,R0*1.3],[60,R0*0.6],[60,0]],"#d4d9df",28,0);}
+  else if(t_==="ventcap"){const R0=W/2;mRev(F,C,u,b.w,[[0,R0*1.05],[R0*0.6,R0*1.45],[R0*1.3,R0*1.2],[R0*1.6,0]],"#c7ccd3",24);}
+  else{const ex=t_==="garari"?120:t_==="line"?60:50,th=t_==="garari"?150:40;mBox(F,at(th/2),u,b.w,b.h,th/2,W/2+ex,H/2+ex,t_==="garari"?"#b8bec6":col);
+    const nL=t_==="line"?3:6;for(let k=1;k<nL;k++){const o=-H/2+H*k/nL;mBox(F,at(th+2).map((v,i)=>v+b.h[i]*o),u,b.w,b.h,2,W/2,4,"#7b8490");}}
+  mDraw(F,T,dep,items);}
 function damperItems(n,P,T,sol,JM,items,dep){if(!n.comp||!DPARTS.includes(n.comp.t)||!P[n.id])return;const sg=M.segs.find(x=>(x.a===n.id||x.b===n.id)&&isDuct(x));if(!sg)return;
   const d=sg.duct,b=ductBasisS(sg),jm=JM.get(sg.id),Ld=Math.hypot(...[0,1,2].map(i=>P[sg.b][i]-P[sg.a][i]))||1,k=jm?Ld/jm.L:1,h=dampLen(n.comp,((M.segs.find(x=>(x.a===n.id||x.b===n.id)&&isDuct(x))||{duct:{}}).duct).sh,((M.segs.find(x=>(x.a===n.id||x.b===n.id)&&isDuct(x))||{duct:{}}).duct).D)/2*k,C=dPt(sg,n.id,P);
   const A=C.map((v,i)=>v-b.u[i]*h),B=C.map((v,i)=>v+b.u[i]*h),col=n.comp.t==="fd"||n.comp.t==="sfd"?"#c9a227":n.comp.t==="cv"?"#3d3d3d":n.comp.t==="dpx"?"#8e7cc3":(n.comp.t==="vav"||n.comp.t==="cav")?"#c7ccd2":"#9aa3ad";
@@ -1109,11 +1125,12 @@ function redTh(big,small){const T={20:38,25:42,32:48,40:52,50:58,65:62,80:72,100
 // 溶接 同心レジューサ H（JIS B 2311 FSGP、大径側で決まる）
 const REDW={20:38.1,25:50.8,32:50.8,40:63.5,50:76.2,65:88.9,80:88.9,100:101.6,125:127};
 /* ===== 管種 ===== */
-const PT={sgp:{n:"炭素鋼鋼管SGP",u:"A"},th:{n:"炭素鋼鋼管SGP ねじ込み",u:"A"},wd:{n:"炭素鋼鋼管SGP 溶接",u:"A"},vth:{n:"SGP-VA/VB/VD 管端防食継手",u:"A"},ts:{n:"VP/HIVP TS継手",u:"VP"},dv:{n:"VP DV継手",u:"VP"},sus:{n:"SUS ナイスジョイント",u:"Su"}};
+const PT={sgp:{n:"炭素鋼鋼管SGP",u:"A"},th:{n:"炭素鋼鋼管SGP ねじ込み",u:"A"},wd:{n:"炭素鋼鋼管SGP 溶接",u:"A"},vth:{n:"SGP-VA/VB/VD 管端防食継手",u:"A"},vtha:{n:"SGP-VA（ライニング）",u:"A"},vthb:{n:"SGP-VB（ライニング）",u:"A"},vthd:{n:"SGP-VD（ライニング）",u:"A"},ts:{n:"VP TS継手",u:"VP"},hits:{n:"HIVP HI-TS継手",u:"VP"},dv:{n:"VP DV継手",u:"VP"},sus:{n:"SUS ナイスジョイント",u:"Su"}};
 const lab=(sz,pt)=>{const u=PT[pt||curPT()].u;return u==="VP"?"VP"+sz:sz+u;};
-function curPT(){if(M&&(M.pt==="th"||M.pt==="wd"))M.pt="sgp";return (M&&M.pt)||$("isoJ").value||"sgp";}
+function curPT(){if(M&&(M.pt==="th"||M.pt==="wd"))M.pt="sgp";if(M&&M.pt==="vth")M.pt="vthb";return (M&&M.pt)||$("isoJ").value||"sgp";}
 // SGP（自動）：50A以下＝ねじ込み、65A以上＝溶接
-const ptRes=(pt,sz)=>pt==="sgp"?((+sz)<=50?"th":"wd"):pt;
+const PTMAP={vtha:"vth",vthb:"vth",vthd:"vth",hits:"ts"};
+const ptRes=(pt,sz)=>pt==="sgp"?((+sz)<=50?"th":"wd"):(PTMAP[pt]||pt);
 const rawPt=s=>(s&&s.pt)||curPT();
 const ptOf=s=>ptRes(rawPt(s),s?szOf(s):M.size);
 const jOf=pt=>pt==="vth"?"th":pt;   // 管端防食はねじ込み扱い（A寸法はJIS B 2301と同一）
@@ -1129,6 +1146,10 @@ const VPV={13:15,16:15,20:20,25:25,30:32,40:40,50:50,65:65,75:80,100:100};
 const TSVS={13:[50,26],16:[54,30],20:[64,35],25:[71,40],30:[80,44],40:[92,55],50:[106,63],65:[119,61],75:[128,64],100:[157,84]};
 // 金属おねじ付（インサート）バルブ用ソケット IVS：エスロン HI-TS継手・ゴールド インサートバルブソケットⅠ型 製作図の全長L（13〜50）。受口長さはTSと同じ
 const TSIVS={13:[60,26],16:[65,30],20:[75,35],25:[85,40],30:[95,44],40:[110,55],50:[125,63]};
+// VP（TS）のフランジ取合い：HI-TSフランジ JIS10K（積水 エスロン、ミスミ掲載）［L＝フランジ面〜受口端, t, D］
+//  バタ弁（ウエハー・ゴムシート）はパッキンなしで2枚のTSフランジに挟む。他のフランジ弁はパッキンあり
+const TSFL={16:[35,14,95],20:[40,14,100],25:[45,14,125],30:[50,16,135],50:[70,20,155],65:[70,22,175],75:[72,22,185],100:[90,22,210]};
+function tsfOf(n){if(!n||!n.comp||!["fl","wf","rb"].includes(n.comp.conn)||ptNd(n)!=="ts")return null;const sz=nodeSize(n.id),m=TSFL[sz],l=TSSOCK[sz];if(!m||!l)return null;return {L:m[0],t:m[1],D:m[2],sock:l,A:VPV[sz]||sz};}
 function ivsOf(n){if(!n||!n.comp||n.comp.conn!=="th"||!VAUTO.includes(n.comp.t)||ptNd(n)!=="ts")return null;const sz=nodeSize(n.id),A=VPV[sz];if(!A)return null;
   const m=TSIVS[sz]||TSVS[sz];if(!m)return null;const e=aOf_(A);return {A,Lv:m[0],lv:m[1],e,ext:m[0]-e,metal:!!TSIVS[sz]};}
 const aOf_=sz=>{const i=TH.sizes.indexOf(+sz);return i<0?15:TH.a[i];};
@@ -1147,7 +1168,7 @@ const NJD={sizes:[13,20,25,30,40,50,60,75,80,100],
   gate:{13:21,20:23,25:25,30:28,40:31,50:34,60:35.5}, ball:{13:26,20:30.5,25:32.5,30:30.5,40:31,50:36.5,60:38},
   // フランジアダプタ ℓ1（フランジ面〜管端）。75〜100SuはNJLFM：相手フランジ面から ℓ1＋1.5（ガスケット3mm込み）
   fa:{13:31,20:33.5,25:36,30:37,40:35,50:35,60:34.5,75:80.5,80:81.5,100:82.5}};
-const PTD={th:TH,vth:TH,wd:WD,ts:TSD,dv:DVD,sus:NJD,sgp:{sizes:WD.sizes}};
+const PTD={th:TH,vth:TH,vtha:TH,vthb:TH,vthd:TH,wd:WD,ts:TSD,hits:TSD,dv:DVD,sus:NJD,sgp:{sizes:WD.sizes}};
 function solve(){
   const warn=[];
   const con={}; M.nodes.forEach(n=>con[n.id]=[]);
@@ -1197,7 +1218,9 @@ function solve(){
       if(pt==="sus"&&c.conn==="th"&&!c.face&&(c.t==="gate"||c.t==="ball")){const v=NJD[c.t][size];return v==null?{v:NaN,t:"ℓ1?"}:{v,t:`ℓ1 ${v}（NJX）`};}
       if(pt==="ts"&&c.conn==="th"&&VPV[size]&&(TSIVS[size]||TSVS[size])){const A=VPV[size],F=faceOf(c,A,"th").v,e=aOf(A),[Lv,lv]=TSIVS[size]||TSVS[size];if(isNaN(F))return {v:NaN,t:"面間?"};
         return {v:F/2-e+(Lv-lv),t:`${F}/2−ねじ込み${fmt(e)}＋${TSIVS[size]?"金属おねじ付バルブ用ソケット":"バルブ用ソケット"}(L${Lv}−受口${lv})`};}
-      if(pt==="ts"||pt==="dv") return {v:NaN,t:"塩ビ管のフランジ弁は未対応（ねじ込み弁＋バルブ用ソケットで配置）"};
+      if(pt==="ts"&&["fl","wf","rb"].includes(c.conn)&&TSFL[size]&&TSSOCK[size]){const A=VPV[size]||size,F=faceOf(c,size,"ts").v,gk=c.conn==="fl"&&!flNoGk(c)?gasket(A):0,[Lf]=TSFL[size],l=TSSOCK[size];if(isNaN(F))return {v:NaN,t:"面間?"};
+        return {v:F/2+gk+(Lf-l),t:`${F}/2${gk?"＋パッキン"+gk:""}＋TSフランジ(L${Lf}−受口${l})${c.conn==="wf"?"（ゴムシートのためパッキンなし）":""}`};}
+      if(pt==="ts"||pt==="dv") return {v:NaN,t:"この口径のTSフランジ寸法なし／DVの弁は未対応"};
       const F=faceOf(c,size,pt).v; if(isNaN(F)) return {v:NaN,t:"面間?"};
       return {v:F/2-a,t:`${F}/2−${fmt(a)}`};
     }
@@ -1244,7 +1267,7 @@ const idx=s=>M.segs.indexOf(s)+1;
 
 /* ===== 描画 ===== */
 // ===== ハンドル・操作部の向き：配管軸まわりに comp.rot 度（45°刻み）。既定は上（縦管は水平）
-const ROTT=["gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz","vd","fd","sd","sfd","md","cd","vav","cav"];
+const ROTT=["mv2","gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz","vd","fd","sd","sfd","md","cd","vav","cav"];
 function rotAbout(v,a,deg){const t=deg*Math.PI/180,c=Math.cos(t),s_=Math.sin(t),k=dt3(a,v),x=[a[1]*v[2]-a[2]*v[1],a[2]*v[0]-a[0]*v[2],a[0]*v[1]-a[1]*v[0]];return [0,1,2].map(i=>v[i]*c+x[i]*s_+a[i]*k*(1-c));}
 function handleW(u3,rot){const l=Math.hypot(...u3)||1,u=u3.map(x=>x/l),w0=Math.abs(u[2])<0.9?[0,0,1]:[0,-1,0];return rotAbout(w0,u,rot||0);}
 function compHandleScr(n){const s0=M.segs.find(x=>(x.a===n.id||x.b===n.id));if(!s0)return null;const w=handleW(DIRS[s0.dir],n.comp&&n.comp.rot),q=proj(w[0],w[1],w[2]),l=Math.hypot(q[0],q[1]);return l<1e-6?null:[q[0]/l,q[1]/l];}
@@ -1270,6 +1293,16 @@ function symbol(c,p,u,col,hv){ // u:配管方向の画面単位ベクトル、hv
     case "wcheck": {const a=P(0,-9),b=P(0,9);g=bow(true)+`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="1.8"/>`;break;}
     case "strainer": {const a=P(-9,0),b=P(9,0),c2=P(4,11),d2=P(12,11);g=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="5"/><line x1="${p[0]}" y1="${p[1]}" x2="${c2[0]}" y2="${c2[1]}" stroke="${col}" stroke-width="2.2"/><line x1="${c2[0]}" y1="${c2[1]}" x2="${d2[0]}" y2="${d2[1]}" stroke="${col}" stroke-width="2.2"/>`;break;}
     case "flange": g=gapMask(-3.5,3.5)+fl(-3.5)+fl(3.5);break;
+    case "mv2": {const a=P(0,0),b=P(0,-11),bx=[P(-6,-11),P(6,-11),P(6,-20),P(-6,-20)];g=bow(false)+`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="1.6"/><polygon points="${bx.map(pt).join(" ")}" fill="${PAL.bg}" stroke="${col}" stroke-width="1.5"/><text x="${P(0,-15.5)[0]}" y="${P(0,-15.5)[1]+3}" font-size="8" font-weight="700" text-anchor="middle" fill="${col}" style="stroke-width:0">M</text>`;break;}
+    case "flowm": {g=`<polygon points="${[P(-11,-7),P(11,-7),P(11,7),P(-11,7)].map(pt).join(" ")}" fill="${PAL.bg}" stroke="${col}" stroke-width="1.6"/><text x="${p[0]}" y="${p[1]+3.2}" font-size="8.5" font-weight="700" text-anchor="middle" fill="${col}" style="stroke-width:0">FM</text>`;break;}
+    case "expj": {g=`<polygon points="${[P(-12,-6),P(12,-6),P(12,6),P(-12,6)].map(pt).join(" ")}" fill="${PAL.bg}" stroke="${col}" stroke-width="1.5"/><polyline points="${[-9,-5,-1,3,9].map((x,i)=>pt(P(x,i%2?5:-5))).join(" ")}" fill="none" stroke="${col}" stroke-width="1.2"/>`;break;}
+    case "insj": {g=gapMask(-4,4)+fl(-4)+fl(4)+`<line x1="${P(-2,-6)[0]}" y1="${P(-2,-6)[1]}" x2="${P(2,6)[0]}" y2="${P(2,6)[1]}" stroke="${col}" stroke-width="1.2"/>`;break;}
+    case "trap": {g=`<circle cx="${p[0]}" cy="${p[1]}" r="7" fill="${PAL.bg}" stroke="${col}" stroke-width="1.6"/><text x="${p[0]}" y="${p[1]+3}" font-size="8" font-weight="700" text-anchor="middle" fill="${col}" style="stroke-width:0">T</text>`;break;}
+    case "silch": {g=`<polygon points="${[P(-16,-11),P(16,-11),P(16,11),P(-16,11)].map(pt).join(" ")}" fill="${PAL.bg}" stroke="${col}" stroke-width="1.6"/><polygon points="${[P(-12,-7),P(12,-7),P(12,7),P(-12,7)].map(pt).join(" ")}" fill="none" stroke="${col}" stroke-width="1" stroke-dasharray="3 2"/>`;break;}
+    case "anemo": {g=`<circle cx="${p[0]}" cy="${p[1]}" r="11" fill="${PAL.bg}" stroke="${col}" stroke-width="1.6"/><circle cx="${p[0]}" cy="${p[1]}" r="7" fill="none" stroke="${col}" stroke-width="1.1"/><circle cx="${p[0]}" cy="${p[1]}" r="3" fill="none" stroke="${col}" stroke-width="1.1"/>`;break;}
+    case "univ": case "line": case "grille": {const H_=c.t==="line"?16:12;g=`<polygon points="${[P(-3,-H_),P(3,-H_),P(3,H_),P(-3,H_)].map(pt).join(" ")}" fill="${PAL.bg}" stroke="${col}" stroke-width="1.6"/>`+[-H_*0.5,0,H_*0.5].map(y=>`<line x1="${P(-3,y)[0]}" y1="${P(-3,y)[1]}" x2="${P(3,y)[0]}" y2="${P(3,y)[1]}" stroke="${col}" stroke-width="1"/>`).join("");break;}
+    case "garari": {g=`<polygon points="${[P(-4,-14),P(4,-14),P(4,14),P(-4,14)].map(pt).join(" ")}" fill="${PAL.bg}" stroke="${col}" stroke-width="1.6"/>`+[-10,-4,2,8].map(y=>`<line x1="${P(-4,y)[0]}" y1="${P(-4,y)[1]}" x2="${P(4,y+4)[0]}" y2="${P(4,y+4)[1]}" stroke="${col}" stroke-width="1"/>`).join("");break;}
+    case "ventcap": {g=`<path d="M${pt(P(0,-11))} C${pt(P(13,-11))} ${pt(P(13,11))} ${pt(P(0,11))} Z" fill="${PAL.bg}" stroke="${col}" stroke-width="1.6"/>`;break;}
     case "flex": {
       if(c.conn==="th"){let d=`M${pt(P(-11,0))}`;for(let k=0;k<6;k++){d+=` L${pt(P(-9+k*3.6,k%2?-5:5))}`;}d+=` L${pt(P(11,0))}`;g=`<path d="${d}" fill="none" stroke="${col}" stroke-width="1.8"/>`;}
       else g=`<line x1="${pt(P(-11,0)).split(",")[0]}" y1="${pt(P(-11,0)).split(",")[1]}" x2="${pt(P(11,0)).split(",")[0]}" y2="${pt(P(11,0)).split(",")[1]}" stroke="${PAL.bg}" stroke-width="6"/><ellipse cx="${p[0]}" cy="${p[1]}" rx="9" ry="7" transform="rotate(${Math.atan2(u[1],u[0])*180/Math.PI},${p[0]},${p[1]})" fill="${PAL.bg}" stroke="${col}" stroke-width="1.8"/>`+fl(-10)+fl(10);
@@ -1289,7 +1322,7 @@ function palette(print){const blk=!print&&DISP.bg==="black";
     dim:print?"#444":(DISP.dimCol||(blk?"#8a96a3":"#444")),cut:blk?"#4ade80":"#0a7a3c",comp:blk?"#60a5fa":"#0a58ca",est:blk?"#facc15":"#b8860b",size:blk?"#c084fc":"#7a3fb0",
     grid1:blk?"#15191e":"#eef1f4",grid2:blk?"#101317":"#f3f5f7",ng:blk?"#ff6b6b":"#c00"};}
 function drawSVG(sol,P,T,opt={}){
-  PAL=palette(!!opt.print);window.__EQP=P;window.__EQBOX=[];
+  PAL=palette(!!opt.print);window.__EQP=P;window.__EQBOX=[];window.__EQDEF=[];window.__EQHULL=[];opt=Object.assign({},opt,{defer:true});
   if(opt.only){const keep={};M.segs.forEach(s=>{if(opt.only.has(s.id)&&P[s.a]&&P[s.b]){keep[s.a]=P[s.a];keep[s.b]=P[s.b];}});P=keep;}
   const dim=M.dim, ink=PAL.text, pc=PAL.pipe, grn=PAL.cut, blue=PAL.comp, ylw=PAL.est;
   let g=`<style>text{paint-order:stroke;stroke:${PAL.bg};stroke-width:3.5px;stroke-linejoin:round;font-family:sans-serif}</style>`;
@@ -1440,10 +1473,15 @@ function drawSVG(sol,P,T,opt={}){
   });
   // PTボス（配管上の取出し）
   M.segs.forEach(s=>{if(!s.boss||!s.boss.length||!P[s.a]||!P[s.b])return;const A=T(P[s.a]),B=T(P[s.b]),L=(s.cc??s.est)||1;
-    s.boss.forEach(b=>{const t=Math.max(0,Math.min(1,b.pos/L)),q=[A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t],u=SV[b.d]||[0,-1],nn=[-u[1],u[0]],h=14,wd=3.2;
-      const c1=[q[0]+nn[0]*wd,q[1]+nn[1]*wd],c2=[q[0]-nn[0]*wd,q[1]-nn[1]*wd],c3=[c2[0]+u[0]*h,c2[1]+u[1]*h],c4=[c1[0]+u[0]*h,c1[1]+u[1]*h];
-      g+=`<polygon points="${[c1,c2,c3,c4].map(z=>z[0].toFixed(1)+","+z[1].toFixed(1)).join(" ")}" fill="${PAL.bg}" stroke="${ink}" stroke-width="1.3"/>`;
-      const txt=b.lab||`SK${b.sz}A`,w=tw(txt,11)+4,cands=[[q[0]+u[0]*(h+12)+nn[0]*(w/2+2),q[1]+u[1]*(h+12)+nn[1]*(w/2+2)],[q[0]+u[0]*(h+12)-nn[0]*(w/2+2),q[1]+u[1]*(h+12)-nn[1]*(w/2+2)],[q[0]+u[0]*(h+24),q[1]+u[1]*(h+24)],[q[0]+nn[0]*(w/2+10),q[1]+nn[1]*(w/2+10)]];
+    s.boss.forEach(b=>{const k=b.k||"pt",t=Math.max(0,Math.min(1,b.pos/L)),q=[A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t],u=SV[b.d]||[0,-1],nn=[-u[1],u[0]],wd=3.2,F2=z=>z[0].toFixed(1)+","+z[1].toFixed(1);let h=14;
+      if(k==="pt"){const c1=[q[0]+nn[0]*wd,q[1]+nn[1]*wd],c2=[q[0]-nn[0]*wd,q[1]-nn[1]*wd],c3=[c2[0]+u[0]*h,c2[1]+u[1]*h],c4=[c1[0]+u[0]*h,c1[1]+u[1]*h];g+=`<polygon points="${[c1,c2,c3,c4].map(F2).join(" ")}" fill="${PAL.bg}" stroke="${ink}" stroke-width="1.3"/>`;}
+      else if(k==="acc"){const r_=7,P_=(a,c)=>[q[0]+u[0]*a+nn[0]*c,q[1]+u[1]*a+nn[1]*c];g+=`<polygon points="${[P_(-r_,-r_),P_(-r_,r_),P_(r_,r_),P_(r_,-r_)].map(F2).join(" ")}" fill="${PAL.bg}" stroke="${ink}" stroke-width="1.4"/><line x1="${P_(-r_,-r_)[0]}" y1="${P_(-r_,-r_)[1]}" x2="${P_(r_,r_)[0]}" y2="${P_(r_,r_)[1]}" stroke="${ink}" stroke-width="1"/>`;h=8;}
+      else if(k==="mp"){g+=`<circle cx="${q[0]}" cy="${q[1]}" r="4.5" fill="${PAL.bg}" stroke="${ink}" stroke-width="1.5"/>`;h=6;}
+      else{h=22;const e_=[q[0]+u[0]*h,q[1]+u[1]*h];g+=`<line x1="${q[0]}" y1="${q[1]}" x2="${e_[0]}" y2="${e_[1]}" stroke="${ink}" stroke-width="1.8"/>`;
+        if(k==="ti"||k==="pi"){g+=`<circle cx="${e_[0]+u[0]*6}" cy="${e_[1]+u[1]*6}" r="6.5" fill="${PAL.bg}" stroke="${ink}" stroke-width="1.5"/><text x="${e_[0]+u[0]*6}" y="${e_[1]+u[1]*6+3.2}" font-size="8" font-weight="700" text-anchor="middle" fill="${ink}" style="stroke-width:0">${k==="ti"?"T":"P"}</text>`;}
+        else{const m_=[q[0]+u[0]*h*0.55,q[1]+u[1]*h*0.55],P_=(a,c)=>[m_[0]+u[0]*a+nn[0]*c,m_[1]+u[1]*a+nn[1]*c];g+=`<polygon points="${[P_(-5,-4),P_(-5,4),P_(5,-4),P_(5,4)].map(F2).join(" ")}" fill="${PAL.bg}" stroke="${ink}" stroke-width="1.3"/>`;
+          if(k==="rv")g+=`<polyline points="${[P_(-2,6),P_(0,9),P_(2,12),P_(0,15)].map(z=>F2([z[0]+0,z[1]])).join(" ")}" fill="none" stroke="${ink}" stroke-width="1"/>`;}}
+      const txt=b.lab||(k==="pt"?`SK${b.sz}A`:k==="acc"||k==="mp"?ATT[k][1]:`${ATT[k][1]} ${b.sz}A`),w=tw(txt,11)+4,cands=[[q[0]+u[0]*(h+12)+nn[0]*(w/2+2),q[1]+u[1]*(h+12)+nn[1]*(w/2+2)],[q[0]+u[0]*(h+12)-nn[0]*(w/2+2),q[1]+u[1]*(h+12)-nn[1]*(w/2+2)],[q[0]+u[0]*(h+24),q[1]+u[1]*(h+24)],[q[0]+nn[0]*(w/2+10),q[1]+nn[1]*(w/2+10)]];
       const pos=cands.find(z=>free(bb(z[0],z[1],w,14)))||cands[0];placed.push(bb(pos[0],pos[1],w,14));
       g+=`<text x="${pos[0]}" y="${pos[1]+4}" font-size="11" font-weight="700" text-anchor="middle" fill="${blue}">${esc(txt)}</text>`;});});
   // ボス取出し（溶接本管→ねじ込み枝）
@@ -1468,7 +1506,7 @@ function drawSVG(sol,P,T,opt={}){
       g+=`<line x1="${p[0]}" y1="${p[1]}" x2="${e[0]}" y2="${e[1]}" stroke="${ink}" stroke-width="3.2"/><polygon points="${q1} ${q2} ${q3} ${q4}" fill="${ink}"/><text x="${q[0]}" y="${q[1]+4}" font-size="10.5" font-weight="700" text-anchor="middle" fill="${blue}">PL</text>`;});
     if(n.comp){const c=sol.con[n.id]; let u=[1,0]; if(c&&c[0]){u=SV[c[0].s.dir]; if(n.comp.t==="cap"){const w=proj(-c[0].v[0],-c[0].v[1],-c[0].v[2]),l=Math.hypot(w[0],w[1]);u=[w[0]/l,w[1]/l];}}
       let cc_=n.comp; if(n.comp.t==="reducer"){const ri=redInfo(n.id); if(ri){u=SV[ri.s1.dir]; cc_={...n.comp,_bigFirst:szOf(ri.s1)>=szOf(ri.s2)};}}
-      if(!(DISP.solid&&(DPARTS.includes(cc_.t)||SOLIDC.includes(cc_.t))))g+=symbol(cc_,p,u,pc,ROTT.includes(cc_.t)?compHandleScr(n):null);
+      if(!(DISP.solid&&(DPARTS.includes(cc_.t)||SOLIDC.includes(cc_.t)||DTERM.includes(cc_.t))))g+=symbol(cc_,p,u,pc,ROTT.includes(cc_.t)?compHandleScr(n):null);
       if(!DISP.solid&&ivsOf(n)){const nn=[-u[1],u[0]];[-1,1].forEach(sd=>{const c0=[p[0]+u[0]*sd*15,p[1]+u[1]*sd*15],c1=[p[0]+u[0]*sd*24,p[1]+u[1]*sd*24],h=4.5;
         g+=`<polygon points="${[[c0[0]+nn[0]*h,c0[1]+nn[1]*h],[c1[0]+nn[0]*h,c1[1]+nn[1]*h],[c1[0]-nn[0]*h,c1[1]-nn[1]*h],[c0[0]-nn[0]*h,c0[1]-nn[1]*h]].map(z=>z[0].toFixed(1)+","+z[1].toFixed(1)).join(" ")}" fill="${PAL.bg}" stroke="${pc}" stroke-width="1.4"/>`;});}
       const L_=compLbl[n.id]; if(L_) g+=`<text x="${L_.x}" y="${L_.y+4}" font-size="11" font-weight="700" text-anchor="middle" fill="${blue}">${L_.txt}</text>`;
@@ -1502,6 +1540,16 @@ function drawSVG(sol,P,T,opt={}){
     g+=`<rect x="${x0}" y="${y0}" width="${w}" height="${hh}" rx="3" fill="${PAL.bg}" stroke="${on?"#2f8fe0":ink}" stroke-width="${on?2:1}"/>`;
     lines.forEach((l,i)=>g+=`<text x="${x0+6}" y="${y0+16+i*16}" font-size="${fs}" font-weight="700" fill="${nt.text?ink:"#999"}">${esc(l)}</text>`);
     if(!opt.print)NOTEBOX[nt.id]={x0,y0,w,h:hh};});
+  // 機器番号の楕円：寸法・口径・部材名・メモ・配管・機器を全部避けて空いてる所へ。近くに無ければ離して引出線
+  (window.__EQDEF||[]).forEach(q=>{const okE=c=>{const b=bb(c[0],c[1],q.rx*2+8,q.ry*2+8);if(!free(b)||q.hitE(c))return false;return !(window.__EQHULL||[]).some(H=>!(b.x1<H[0]||b.x0>H[2]||b.y1<H[1]||b.y0>H[3]));};
+    let c=q.cands.find(okE),lead=false;
+    if(!c){for(const R_ of [140,200,270,350,450]){for(let k=0;k<16&&!c;k++){const a=Math.PI*2*k/16,z=[q.cx+Math.cos(a)*(R_+q.rx),q.cy+Math.sin(a)*(R_*0.7+q.ry)];if(okE(z))c=z;}if(c)break;}lead=!!c;}
+    if(!c){c=q.cands[0];lead=false;}
+    placed.push(bb(c[0],c[1],q.rx*2+8,q.ry*2+8));
+    if(lead){const hx=Math.max(q.hull[0],Math.min(q.hull[2],c[0])),hy=Math.max(q.hull[1],Math.min(q.hull[3],c[1])),dx=hx-c[0],dy=hy-c[1],L_=Math.hypot(dx,dy)||1,ex=c[0]+dx/L_*q.rx*0.98,ey=c[1]+dy/L_*q.ry*0.98;
+      g+=`<line x1="${ex}" y1="${ey}" x2="${hx}" y2="${hy}" stroke="${PAL.text}" stroke-width="1"/><circle cx="${hx}" cy="${hy}" r="2.4" fill="${PAL.text}"/>`;}
+    g+=`<g><ellipse cx="${c[0]}" cy="${c[1]}" rx="${q.rx}" ry="${q.ry}" fill="${PAL.bg}" stroke="${PAL.text}" stroke-width="1.2"/><line x1="${c[0]-q.rx*0.92}" y1="${c[1]+q.ry*0.35}" x2="${c[0]+q.rx*0.92}" y2="${c[1]-q.ry*0.35}" stroke="${PAL.text}" stroke-width="1"/><text x="${c[0]-4}" y="${c[1]-4}" font-size="12" font-weight="700" text-anchor="middle" fill="${PAL.text}">${esc(q.t1)}</text><text x="${c[0]+4}" y="${c[1]+15}" font-size="12" font-weight="700" text-anchor="middle" fill="${PAL.text}">${esc(q.t2)}</text></g>`;});
+  window.__EQDEF=[];
   return g;
 }
 let NOTEBOX={};
@@ -1750,9 +1798,9 @@ function renderSide(sol){
     ${KPAD()?`<div class="kpad">${["7","8","9","⌫","4","5","6","C","1","2","3","−10","0","00",".","＋10"].map(k=>`<button data-k="${k}">${k}</button>`).join("")}<button data-k="prev" class="w2">◀ 前の区間</button><button data-k="ok" class="w2 pri">確定 ▶ 次</button></div>`:""}
     <div class="row" style="margin-top:6px"><div style="flex:1"><label>口径</label><select id="eSz">${sizeList(rawPt(s)).map(z=>`<option value="${z}"${z==szOf(s)?" selected":""}>${lab(z,ptOf(s))}</option>`).join("")}</select></div>
       <div style="flex:1"><label>&nbsp;</label><button id="eSzSub" style="width:100%">この先も同じ口径に</button></div></div>
-    <label style="margin-top:6px">管種（機器取合い等でこの区間だけ変える場合）</label><select id="ePt"><option value=""${!s.pt?" selected":""}>図面の既定（${PT[curPT()].n}）</option>${Object.entries(PT).filter(([k])=>!["th","wd"].includes(k)||s.pt===k).map(([k,v])=>`<option value="${k}"${s.pt===k?" selected":""}>${v.n}${k==="sgp"?"（50A以下ねじ込み・65A以上溶接）":k==="th"||k==="wd"?"（旧）":""}</option>`).join("")}</select>
+    <label style="margin-top:6px">管種（機器取合い等でこの区間だけ変える場合）</label><select id="ePt"><option value=""${!s.pt?" selected":""}>図面の既定（${PT[curPT()].n}）</option>${Object.entries(PT).filter(([k])=>!["th","wd","vth"].includes(k)||s.pt===k).map(([k,v])=>`<option value="${k}"${s.pt===k?" selected":""}>${v.n}${k==="sgp"?"（50A以下ねじ込み・65A以上溶接）":k==="th"||k==="wd"||k==="vth"?"（旧）":""}</option>`).join("")}</select>
     ${isDuct(s)?"":sysEditUI(s)}
-    ${isDuct(s)?"":`<div style="margin-top:6px"><label>PTボス（溶接の取出し）</label>${(s.boss||[]).map((b,i)=>`<div class="row" style="gap:4px;margin:2px 0"><span style="font-size:12px">起点から</span><input data-bp="${i}" type="number" value="${b.pos}" style="width:70px"><span style="font-size:12px">mm</span><select data-bs="${i}">${[8,10,15,20,25].map(z=>`<option value="${z}"${z==b.sz?" selected":""}>${z}A</option>`).join("")}</select><select data-bd="${i}">${Object.keys(DIRS).filter(k=>!isDiag(k)&&k!==s.dir&&k!==OPP[s.dir]).map(k=>`<option value="${k}"${k===b.d?" selected":""}>${dirLab(k)}</option>`).join("")}</select><button data-bo="${i}">配管を出す</button><button class="del" data-bx="${i}">外す</button></div>`).join("")}<button id="eBossAdd">＋ PTボスを追加</button></div>`}
+    <div style="margin-top:6px"><label>取付品（${isDuct(s)?"点検口・測定口":"PTボス・温度計・圧力計・エア抜き・安全弁・水抜き"}）</label>${(s.boss||[]).map((b,i)=>`<div class="row" style="gap:4px;margin:2px 0;flex-wrap:wrap"><b style="font-size:12px;min-width:64px">${ATT[b.k||"pt"][0]}</b><span style="font-size:12px">起点から</span><input data-bp="${i}" type="number" value="${b.pos}" style="width:70px"><span style="font-size:12px">mm</span>${isDuct(s)?"":`<select data-bs="${i}">${[8,10,15,20,25,32,40,50].map(z=>`<option value="${z}"${z==b.sz?" selected":""}>${z}A</option>`).join("")}</select>`}<select data-bd="${i}">${Object.keys(DIRS).filter(k=>!isDiag(k)&&k!==s.dir&&k!==OPP[s.dir]).map(k=>`<option value="${k}"${k===b.d?" selected":""}>${dirLab(k)}</option>`).join("")}</select>${(b.k||"pt")==="pt"?`<button data-bo="${i}">配管を出す</button>`:""}<button class="del" data-bx="${i}">外す</button></div>`).join("")}${isDuct(s)?`<button id="eAttAcc">＋ 点検口</button> <button id="eAttMp">＋ 測定口</button>`:`<button id="eBossAdd">＋ PTボス</button> <select id="eAttK"><option value="">＋ 計器・付属を追加…</option>${["ti","pi","av","rv","dr"].map(k=>`<option value="${k}">${ATT[k][0]}</option>`).join("")}</select>`}</div>
     <div class="row" style="margin-top:6px"><div style="flex:1"><label>向き（今の画面で）</label><select id="eDir">${Object.entries(DIRS).map(([k,v])=>`<option value="${k}"${k===s.dir?" selected":""}>${dirLab(k)}</option>`).join("")}</select></div></div>
     <div style="margin-top:8px">
      <div class="kv"><span>端部（起点）</span><span>${endName(s.a,sol)}　控除 ${c.d1.t}</span></div>
@@ -1763,9 +1811,15 @@ function renderSide(sol){
     <div class="row"><select id="eConv" style="flex:1"><option value="">— 選ぶ —</option>${Object.entries(FLEXSER).map(([k,v])=>`<option value="flex:${k}">フレキ：${v.name}${v.L?"":"（L＝この区間の長さ）"}</option>`).join("")}<option value="strainer:">ストレーナ（フランジ形）</option></select><button id="eConvGo">変更</button></div>
     <div class="row" style="margin-top:8px"><button class="pri" id="eOK">確定して次へ</button><button id="eCopy">この区間から先を複写</button><button class="del" id="eDel">この区間から先を削除</button></div>`;
     const inp=$("eCC"); if(!KPAD())setTimeout(()=>{try{inp.focus();inp.select();}catch(e){}},30);
+    if(isDuct(s)){const L0d=()=>(s.cc??s.est)||0,addD=k=>{push();(s.boss=s.boss||[]).push({k,pos:Math.round(L0d()/2),sz:0,d:"U"});render();};
+      if($("eAttAcc"))$("eAttAcc").onclick=()=>addD("acc");if($("eAttMp"))$("eAttMp").onclick=()=>addD("mp");
+      E.querySelectorAll("[data-bp]").forEach(i=>i.onchange=()=>{push();s.boss[+i.dataset.bp].pos=Math.max(0,+i.value||0);render();});
+      E.querySelectorAll("[data-bd]").forEach(i=>i.onchange=()=>{push();s.boss[+i.dataset.bd].d=i.value;render();});
+      E.querySelectorAll("[data-bx]").forEach(b=>b.onclick=()=>{push();s.boss.splice(+b.dataset.bx,1);render();});}
     if(!isDuct(s)){sysEditBind(s);
       const L0=()=>(s.cc??s.est)||0;
-      if($("eBossAdd"))$("eBossAdd").onclick=()=>{push();(s.boss=s.boss||[]).push({pos:Math.round(L0()/2),sz:20,d:["U","N","E","S","W","D"].find(k=>k!==s.dir&&k!==OPP[s.dir])});render();};
+      const attAdd=(k,sz)=>{push();(s.boss=s.boss||[]).push({k,pos:Math.round(L0()/2),sz,d:k==="dr"?"D":isDuct(s)?"U":["U","N","E","S","W","D"].find(q=>q!==s.dir&&q!==OPP[s.dir])});render();};
+      if($("eBossAdd"))$("eBossAdd").onclick=()=>attAdd("pt",20);if($("eAttK"))$("eAttK").onchange=e=>{const k=e.target.value;if(k)attAdd(k,k==="dr"?20:15);};
       E.querySelectorAll("[data-bp]").forEach(i=>i.onchange=()=>{push();s.boss[+i.dataset.bp].pos=Math.max(0,+i.value||0);render();});
       E.querySelectorAll("[data-bs]").forEach(i=>i.onchange=()=>{push();s.boss[+i.dataset.bs].sz=+i.value;render();});
       E.querySelectorAll("[data-bd]").forEach(i=>i.onchange=()=>{push();s.boss[+i.dataset.bd].d=i.value;render();});
@@ -1877,6 +1931,8 @@ function countParts(sol,withFace){const cnt={};M.nodes.forEach(n=>{
 });return cnt;}
 /* ===== 材料表（仕様つき） ===== */
 const PIPESPEC={th:()=>`配管用炭素鋼鋼管 ${$("mPipe").value||"SGP"}　JIS G 3452`,wd:()=>`配管用炭素鋼鋼管 ${$("mPipe").value||"SGP"}　JIS G 3452`,vth:()=>"水道用硬質塩化ビニルライニング鋼管 SGP-VA/VB/VD　JWWA K 116",ts:()=>"水道用硬質ポリ塩化ビニル管 VP/HIVP　JIS K 6742",dv:()=>"硬質ポリ塩化ビニル管 VP　JIS K 6741",sus:()=>"一般配管用ステンレス鋼鋼管 SUS304TPD　JIS G 3448"};
+const PIPESPEC_R={vtha:"水道用硬質塩化ビニルライニング鋼管 SGP-VA　JWWA K 116",vthb:"水道用硬質塩化ビニルライニング鋼管 SGP-VB　JWWA K 116",vthd:"水道用硬質塩化ビニルライニング鋼管 SGP-VD　JWWA K 116",ts:"水道用硬質ポリ塩化ビニル管 VP　JIS K 6742",hits:"水道用耐衝撃性硬質ポリ塩化ビニル管 HIVP　JIS K 6742"};
+const FITSPEC_R={hits:"水道用耐衝撃性硬質ポリ塩化ビニル管継手 HI-TS　JIS K 6743",vthd:"ねじ込み式管端防食管継手 外面樹脂被覆（桑名金属 PQWK）　JPF MP 003"};
 const FITSPEC={th:"ねじ込み式可鍛鋳鉄製管継手　JIS B 2301",wd:"鋼製突合せ溶接式管継手　JIS B 2311",vth:"ねじ込み式管端防食管継手（桑名金属 PQWK）　JPF MP 003",ts:"水道用硬質ポリ塩化ビニル管継手 TS　JIS K 6743",dv:"排水用硬質ポリ塩化ビニル管継手 DV　JIS K 6739",sus:"拡管式管継手（オーエヌ工業 ナイスジョイント）"};
 // ===== フランジ接合の拾い：部材のフランジ1面ごとに「管側フランジ＋パッキン＋ボルトナット」1組。
 // 部材どうし（または機器ノズル）が直付け（間の配管の切寸法≦1mm）なら管側フランジは不要で、接合は1か所。
@@ -1888,15 +1944,19 @@ function flSides(n,sol){const S=sol||LAST.sol||solve();return M.segs.filter(x=>(
   const mz=m&&m.noz?nozOf(m):null,mFl=(m&&m.comp&&flFace(m.comp))||(mz&&mz.z.conn==="fl");return {s:x,m,direct:!!mFl&&L<=1};});}
 function materials(sol){const rows={};const add=(cat,name,spec,q,unit)=>{const k=cat+"|"+name+"|"+spec;if(!rows[k])rows[k]={cat,name,spec,q:0,unit,n:0};rows[k].q+=q;rows[k].n++;};
   const ptN=nid=>ptOf(M.segs.find(x=>x.a===nid||x.b===nid));
-  M.segs.forEach(s=>{if(isDuct(s)){const d=s.duct,L=(s.cc??s.est)||0,nm=(d.sh==="c"?"丸ダクト":"角ダクト")+"（"+(DUSE[d.use]||{n:d.use}).n+"）",sp=d.sh==="c"?"φ"+d.D:d.W+"×"+d.H;add("ダクト",nm,sp,Math.round(L)/1000,"m");add("ダクト",nm+" 面積",sp,Math.round((d.sh==="c"?Math.PI*d.D:2*(+d.W+ +d.H))*L/1e4)/100,"m²");return;}const pt=ptOf(s),c=sol.cut[s.id];add("配管",`${lab(szOf(s),pt)}`,PIPESPEC[pt](),(s.cc!=null&&c.ok)?c.L:0,"mm");});
-  M.nodes.forEach(n=>{const nsz=nodeSize(n.id),pt=ptN(n.id),L=lab(nsz,pt),fs=FITSPEC[pt];
+  M.segs.forEach(s=>{if(isDuct(s)){const d=s.duct,L=(s.cc??s.est)||0,nm=(d.sh==="c"?"丸ダクト":"角ダクト")+"（"+(DUSE[d.use]||{n:d.use}).n+"）",sp=d.sh==="c"?"φ"+d.D:d.W+"×"+d.H;add("ダクト",nm,sp,Math.round(L)/1000,"m");add("ダクト",nm+" 面積",sp,Math.round((d.sh==="c"?Math.PI*d.D:2*(+d.W+ +d.H))*L/1e4)/100,"m²");return;}const pt=ptOf(s),c=sol.cut[s.id];add("配管",`${lab(szOf(s),pt)}`,PIPESPEC_R[rawPt(s)]||PIPESPEC[pt](),(s.cc!=null&&c.ok)?c.L:0,"mm");});
+  M.nodes.forEach(n=>{const nsz=nodeSize(n.id),pt=ptN(n.id),L=lab(nsz,pt),s0_=M.segs.find(x=>x.a===n.id||x.b===n.id),fs=(s0_&&FITSPEC_R[rawPt(s0_)])||FITSPEC[pt];
     if(n.comp&&DPARTS.includes(n.comp.t)){const sg=M.segs.find(x=>(x.a===n.id||x.b===n.id)&&isDuct(x));const d=sg?sg.duct:null;add("ダクト",`${n.comp.label?n.comp.label+"（"+PARTS[n.comp.t][0]+"）":PARTS[n.comp.t][0]}`,d?(d.sh==="c"?"φ"+d.D:d.W+"×"+d.H)+"　L"+dampLen(n.comp,((M.segs.find(x=>(x.a===n.id||x.b===n.id)&&isDuct(x))||{duct:{}}).duct).sh,((M.segs.find(x=>(x.a===n.id||x.b===n.id)&&isDuct(x))||{duct:{}}).duct).D):"",1,"台");return;}
+    if(n.comp&&DTERM.includes(n.comp.t)){const sg=M.segs.find(x=>(x.a===n.id||x.b===n.id)&&isDuct(x));if(sg){const d_=sg.duct;add("ダクト",n.comp.label?n.comp.label+"（"+PARTS[n.comp.t][0]+"）":PARTS[n.comp.t][0],`${d_.sh==="c"?"φ"+d_.D:d_.W+"×"+d_.H}　${(DUSE[d_.use]||{n:d_.use}).n||""}${+sg.q?"　"+sg.q+"CMH":""}`,1,"個");}return;}
     if(M.segs.some(x=>(x.a===n.id||x.b===n.id)&&isDuct(x)))return;
     if(n.comp){const c=n.comp,t=c.t,F=faceOf(c,nsz,pt).v;
       if(t==="reducer"){const ri=redInfo(n.id);add("継手",`${ri?lab(ri.big,pt)+"×"+ri.small:L} ${c.label||"レジューサ"}`,fs,1,"個");}
       else if(["socket","cap","union"].includes(t))add("継手",`${L} ${c.label||PARTS[t][0]}`,fs,1,"個");
       else if(t==="flange")add("継手",`${L} ${c.label||"フランジ"}`,`JIS 10K（${ENDT[endType(c,pt)]}）`,2,"枚");
       else if(t==="flex")add("弁・機器",`${L} ${c.label||FLEXSER[c.series||"sk10"].name}`,`${CFORM[c.conn]||""}${isNaN(F)?"":"　面間"+F}`,1,"台");
+      else if(tsfOf(n)){const T_=tsfOf(n),ns_=M.segs.filter(x=>x.a===n.id||x.b===n.id).length,bt=JBOLT[T_.A]||[4,"M16"];add("弁・機器",`${T_.A}A ${c.label?c.label+"（"+PARTS[t][0]+"）":PARTS[t][0]}`,`${CFORM[c.conn]||""}　面間${F}（VP${nsz}に取付）`,1,"台");
+        add("継手",`${lab(nsz,"ts")} TSフランジ`,`HI-TS JIS10K L${T_.L}`,ns_,"枚");if(c.conn!=="wf")add("継手",`${T_.A}A ガスケット`,"",ns_-1>0?ns_-1:1,"枚");
+        add("継手",`${bt[1]} ボルト・ナット`,c.conn==="wf"?"通しボルト（ウエハー）":"",c.conn==="wf"?bt[0]:bt[0]*ns_,"組");}
       else if(pt==="ts"&&c.conn==="th"&&VPV[nsz]){const A=VPV[nsz],ns_=M.segs.filter(x=>x.a===n.id||x.b===n.id).length;add("弁・機器",`${A}A ${c.label?c.label+"（"+PARTS[t][0]+"）":PARTS[t][0]}`,`${CFORM[c.conn]||""}　面間${F}（VP${nsz}に取付）`,1,"台");add("継手",`${lab(nsz,"ts")} ${TSIVS[nsz]?"金属おねじ付バルブ用ソケット（IVS）":"バルブ用ソケット（VS）"}`,`TS継手 VP${nsz}×${RNAME[A]||A+"A"}${TSIVS[nsz]?"　黄銅インサートおねじ":"おねじ"}　L${(TSIVS[nsz]||TSVS[nsz])[0]}`,ns_,"個");}
       else add("弁・機器",`${L} ${c.label?c.label+"（"+PARTS[t][0]+"）":PARTS[t][0]}${isCore(c,pt)?"（コア内蔵）":""}`,`${isCore(c,pt)?"管端防食コア内蔵 ":""}${CFORM[c.conn]||""}${c.conn==="fl"?" JIS 10K":""}${isNaN(F)?"":"　面間"+F}`,1,"台");
       const gk=gasket(nsz),bolt=sz=>{const b=JBOLT[sz];if(b)add("継手",`${sz}A ボルト・ナット`,`${b[1]}（JIS 10K ${b[0]}本／1か所）`,b[0],"組");};
@@ -1915,7 +1975,14 @@ function materials(sol){const rows={};const add=(cat,name,spec,q,unit)=>{const k
     if(n.noz&&M.segs.some(s=>s.a===n.id||s.b===n.id)){const nz=nozOf(n);if(nz&&nz.z.conn==="fl"){const gk=gasket(nsz),dir=flSides(n,sol).some(sd=>sd.direct);
       if(!dir){add("継手",`${L} フランジ`,`JIS 10K（機器接続：${ENDT[endType({t:"flange",conn:"fl"},pt)]}）`,1,"枚");add("継手",`${L} ガスケット`,`フランジ用ガスケット t${gk}`,1,"枚");}
       const b=JBOLT[nsz];if(b)add("継手",`${nsz}A ボルト・ナット`,`${b[1]}（JIS 10K ${b[0]}本／1か所）`,b[0],"組");}}});
-  M.segs.forEach(s=>(s.boss||[]).forEach(b=>add("継手",`${b.sz}A PTボス`,`溶接用（${lab(szOf(s),ptOf(s))}管に取付）`,1,"個")));
+  M.segs.forEach(s=>(s.boss||[]).forEach(b=>{const k=b.k||"pt";if(isDuct(s)){add("ダクト",ATT[k][0],s.duct.sh==="c"?"φ"+s.duct.D:s.duct.W+"×"+s.duct.H,1,"箇所");return;}
+    const wdM=jOf(ptOf(s))==="wd",take=()=>{if(wdM)add("継手",`${b.sz}A PTボス`,`溶接用（${lab(szOf(s),ptOf(s))}管に取付）`,1,"個");else add("継手",`${lab(szOf(s),ptOf(s))}×${b.sz} 径違いチーズ（取出し）`,FITSPEC[ptOf(s)]||"",1,"個");};
+    if(k==="pt"){take();return;}take();
+    if(k==="ti")add("弁・機器",`${b.sz}A 温度計`,"取付ねじ込み（測温範囲・感温部長さは系統に合わせる）",1,"台");
+    if(k==="pi"){add("弁・機器",`${b.sz}A 圧力計`,"ブルドン管式（目盛範囲は系統に合わせる）",1,"台");add("弁・機器",`${b.sz}A ゲージコック`,"圧力計元弁",1,"個");}
+    if(k==="av"){add("弁・機器",`${b.sz}A 自動エア抜き弁`,"",1,"台");add("弁・機器",`${b.sz}A ボール弁`,"自動エア抜き弁の元弁",1,"台");}
+    if(k==="rv")add("弁・機器",`${b.sz}A 安全弁`,"吹出圧力は系統に合わせる",1,"台");
+    if(k==="dr"){add("弁・機器",`${b.sz}A ボール弁`,"水抜き",1,"台");add("継手",`${b.sz}A キャップ`,"水抜き弁の先",1,"個");}}));
   (M.eqs||[]).forEach(e=>{const T_=EQT[e.t],p=e.p;add("機器",eqName(e),T_.spec?`${T_.nm}　${T_.spec(p)}`:T_.fixed?`${T_.nm}　${e.noz.map(z=>z.nm+z.sz+"A").join("・")}`:T_.sh==="vcyl"?`${T_.nm}　φ${p.Dd}×H${p.H}`:T_.sh==="hcyl"?`${T_.nm}　φ${p.Dd}×L${p.L}`:`${T_.nm}　W${p.W}×D${p.D}×H${p.H}`,1,"台");});
   if(M.segs.some(isDuct)){const JM=ductJointMap(sol),dp=+M.dpc||1740;
     M.segs.forEach(s=>{if(!isDuct(s)||s.duct.sh==="c")return;const d=s.duct,sp=d.W+"×"+d.H,jm=JM.get(s.id);if(!jm)return;
@@ -2044,7 +2111,11 @@ const PICK={
   "ストレーナ・減圧":{"Y形ストレーナ":["strainer","ストレーナ"],"減圧弁":["prv","減圧弁"],"減圧式逆流防止器（兼工業）":["rpz","減圧式逆流防止器"]},
   "フレキ":Object.fromEntries(Object.entries(FLEXSER).map(([k,v])=>[v.name,["flex",v.name,k]])),
   "継手":{"フランジ":["flange","フランジ"],"ユニオン":["union","ユニオン"],"ソケット":["socket","ソケット"],"キャップ":["cap","キャップ"],"レジューサ":["reducer","レジューサ"],"PTボス（溶接の取出し）":["boss","PTボス"]},
-  "ダクト部材":Object.fromEntries(DPARTS.map(t=>[PARTS[t][0],[t,PARTS[t][0]]]))};
+  "調節弁・計器・継手類":{"電動二方弁（調節弁）":["mv2","電動二方弁"],"流量計":["flowm","流量計"],"伸縮管継手":["expj","伸縮管継手"],"絶縁継手（異種管の接合）":["insj","絶縁継手"],"ドレントラップ（空調ドレン）":["trap","ドレントラップ"]},
+  "配管の取付品（配管の上をタップ）":{"温度計":["att:ti","温度計"],"圧力計":["att:pi","圧力計"],"自動エア抜き弁":["att:av","自動エア抜き弁"],"安全弁":["att:rv","安全弁"],"水抜き弁":["att:dr","水抜き弁"]},
+  "ダクト部材":Object.fromEntries(DPARTS.map(t=>[PARTS[t][0],[t,PARTS[t][0]]])),
+  "制気口・外壁（ダクトの管端をタップ）":Object.fromEntries(DTERM.map(t=>[PARTS[t][0],[t,PARTS[t][0]]])),
+  "ダクトの取付品（ダクトの上をタップ）":{"点検口":["att:acc","点検口"],"測定口":["att:mp","測定口"]}};
 const PK_CONNLAB={th:"JIS 10K ねじ込み",fl:"JIS 10K フランジ",wf:"ウェハー（ゴムシート）",rb:"フランジ（ゴム面）"};
 function pkPreview(t,conn,ser,sz){if(t==="stop")t=sz>=65?"bfly":"gate";if(VAUTO.includes(t)){const cs=CONNS[t]||["th"],w=sz>=65?(cs.includes("wf")?"wf":"fl"):"th";conn=cs.includes(w)?w:cs[0];}if(t==="boss")return `<svg viewBox="0 0 300 190" width="100%" style="background:#fff;border-radius:6px"><line x1="10" y1="125" x2="290" y2="125" stroke="#111" stroke-width="10"/><rect x="140" y="80" width="20" height="40" fill="none" stroke="#1d4ed8" stroke-width="2"/><line x1="146" y1="80" x2="146" y2="120" stroke="#1d4ed8"/><text x="170" y="95" font-size="14" fill="#1d4ed8" font-weight="700">SK${sz}A</text><text x="150" y="175" font-size="12" text-anchor="middle" fill="#555">配管の上をタップした位置に付く（サイズ＝ボスの口径）</text></svg>`;const c={t,face:"",conn,series:ser};let L=NaN,src="";
   if(DPARTS.includes(t)){L=dampLen(c,"r",0);src="ダクト部材の標準長";}else if(!["cap","reducer"].includes(t)){const f=faceOf(c,sz);L=f.v;src=f.src||"";}
@@ -2137,7 +2208,7 @@ function doDelete(){
 }
 let drag=null, partSer=null;
 let partConn=null,partNoLab=false;
-const VAUTO=["stop","gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz"];
+const VAUTO=["mv2","flowm","expj","insj","stop","gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz"];
 // 弁の接続は口径で自動：65A以上＝フランジ（バタ弁はウエハー）、50A以下＝ねじ込み。「止水弁」は 50A以下＝仕切弁・65A以上＝バタフライ弁
 function newComp(t,sg){const sz=sg?szOf(sg):+M.size;if(t==="stop")t=sz>=65?"bfly":"gate";
   if(VAUTO.includes(t)){const cs=CONNS[t]||["th"],want=sz>=65?(cs.includes("wf")?"wf":"fl"):"th",c={t,face:"",conn:cs.includes(want)?want:cs[0]};if(partNoLab)c.noLab=true;return c;}
@@ -2218,6 +2289,12 @@ function tap(p){if(actEnd&&mode==="sel"){actEnd=null;showEndPanel();}
     push();const old=PARTS[n.comp.t][0];const nc=newComp(part); if(part!=="flex"&&(CONNS[part]||[]).includes(n.comp.conn)) nc.conn=n.comp.conn; n.comp=nc;sel={k:"n",id:n.id};render();toast(`${old} → ${part==="flex"?FLEXSER[nc.series].name:PARTS[part][0]} に入替`);return;}
   if(mode==="part"){
     const n=nearestNode(p,16), deg=n?LAST.sol.con[n.id].length:0;
+    if(String(part).startsWith("att:")){const k=part.slice(4),duct=k==="acc"||k==="mp",hs=nearestSeg(p,16);if(!hs||isDuct(hs.s)!==duct){toast(duct?"ダクトの上をタップ":"配管の上をタップ");return;}
+      const s_=hs.s,L=(s_.cc??s_.est)||0;push();(s_.boss=s_.boss||[]).push({k,pos:Math.round(L*hs.t/5)*5,sz:k==="ti"||k==="pi"?15:k==="av"?15:k==="dr"?20:20,d:duct?"U":(k==="dr"?"D":["U","N","E","S","W","D"].find(q=>q!==s_.dir&&q!==OPP[s_.dir]))});
+      sel={k:"s",id:s_.id};render();toast(`${ATT[k][0]}を追加（位置・向き・口径は右の欄で）`);return;}
+    if(DTERM.includes(part)){const nn=nearestNode(p,18),deg_=nn?M.segs.filter(x=>x.a===nn.id||x.b===nn.id).length:0,sg_=nn&&M.segs.find(x=>x.a===nn.id||x.b===nn.id);
+      if(!nn||deg_!==1||!sg_||!isDuct(sg_)||nn.noz){toast("ダクトの管端（赤点）をタップ");return;}if(nn.comp){toast("すでに付いてる");return;}
+      push();nn.comp={t:part,face:"",conn:""};if(DTERMDP[part]&&!(+sg_.dpEnd)){sg_.dpEnd=DTERMDP[part];sg_.endNm=PARTS[part][1];}sel={k:"n",id:nn.id};render();toast(`${PARTS[part][0]}を付けた${DTERMDP[part]?`（末端圧損 ${DTERMDP[part]}Pa：設計基準 AC6-9-2 の目安）`:"（圧損はメーカー値を区間の末端圧損に入力）"}`);return;}
     if(part==="boss"){const hs=nearestSeg(p,16);if(!hs||isDuct(hs.s)){toast("PTボスを付ける配管をタップ");return;}const s_=hs.s,L=(s_.cc??s_.est)||0;
       push();(s_.boss=s_.boss||[]).push({pos:Math.round(L*hs.t/5)*5,sz:window.__bossSz||20,d:["U","N","E","S","W","D"].find(k=>k!==s_.dir&&k!==OPP[s_.dir])});sel={k:"s",id:s_.id};render();toast("PTボスを追加（位置・向き・口径は右の欄で）");return;}
     if(part==="plug"){
@@ -2623,7 +2700,7 @@ function buildSheet(){ // A3横1枚：図＋材料表
   $("report").innerHTML=`<div class="sh"><div style="border:2px solid #111;overflow:hidden">${svg}</div>
   <div style="font-size:${fs}px;display:flex;flex-direction:column">
    <div style="font-size:22px;font-weight:800;letter-spacing:3px;text-align:center;border:2px solid #111;padding:6px">配管アイソメ図</div>
-   <table class="tb" style="margin-top:6px"><tr><td>図面名</td><td>${esc(dn)}</td></tr><tr><td>現場名</td><td>${esc($("mSite").value)}</td></tr><tr><td>系統・図番</td><td>${esc($("mSys").value)}</td></tr>
+   <table class="tb" style="margin-top:6px"><tr><td>図面名</td><td>${esc(dn)}</td></tr><tr><td>現場名</td><td>${esc($("mSite").value)}</td></tr><tr><td>系統・図番</td><td>${esc($("mSys").value)}</td></tr>${M.note?`<tr><td>特記事項</td><td style="text-align:left;white-space:pre-wrap">${esc(M.note)}</td></tr>`:""}
    <tr><td>管種</td><td>${esc(PT[curPT()].n)}${M.segs.some(s=>s.pt)?"（一部区間は別管種）":""}</td></tr><tr><td>寸法</td><td>${lbl}（mm）・非尺度・視点 ${ROTC[ROT]}</td></tr>
    <tr><td>作成日</td><td>${esc($("mDate").value)}</td></tr><tr><td>作成者</td><td>${esc($("mAuthor").value)}</td></tr><tr><td>会社名</td><td>${esc($("mCo").value)}</td></tr></table>
    <h4>材料表</h4>
@@ -2790,13 +2867,17 @@ const EQT={
   // 根拠：川本 機器明細書 78ZA-016660（241L/min×55m・5.5kW・50×40）、ユニット外形図（ポンプ芯183／ヘッダー芯396／盤1000×580×194・天端1240／ベース1050×590）、PBKV 図（1050×680・据付時約124）
   // PWU-2：KFE40A3.7＋QGP-55（ポンプ芯168／ヘッダー芯363／盤天端1100／架台122）。流量207L/min・57mは川本確認済の運用値。ポンプのピッチ・ケーシング径・PWU-2の盤高さは概略
   booster:{nm:"加圧給水ポンプユニット",ab:"PWU",geo:"booster",qw:241,
-    p:{n:2,bs:50,bd:40,kw:5.5,W:1050,D:590,av:124,hb:68,Hs:183,Hd:396,pt:420,Dc:245,ph:1000,pw:580,pz:1240},
-    pl:{n:"ポンプ台数",bs:"吸込口径 A",bd:"吐出口径 A",kw:"電動機 kW（1台）",W:"共通ベース 幅",D:"共通ベース 奥行",av:"防振架台 高さ（据付時）",hb:"共通ベース高さ",Hs:"ポンプ芯（ユニット下端から）",Hd:"吐出ヘッダー芯（ユニット下端から）",pt:"ポンプピッチ（概略）",Dc:"ケーシング径（概略）",ph:"制御盤 高さ",pw:"制御盤 幅",pz:"制御盤 天端（ユニット下端から）"},
-    pre:[["PWU-1 KFE50A5.5（TY14x・防振PBKV）",{bs:50,bd:40,kw:5.5,W:1050,D:590,av:124,Hs:183,Hd:396,pt:420,Dc:245,ph:1000,pw:580,pz:1240,qw:241}],
-         ["PWU-2 KFE40A3.7（TY14x・防振QGP-55）",{bs:40,bd:40,kw:3.7,W:1033,D:590,av:122,Hs:168,Hd:363,pt:400,Dc:200,ph:860,pw:580,pz:1100,qw:207}],
-         ["汎用 32A 1.1kW×2（エバラ実測・防振なし）",{bs:32,bd:32,kw:1.1,W:720,D:495,av:0,hb:68,Hs:173,Hd:378,pt:500,Dc:188,ph:0,qw:0}]],
+    p:{n:2,bs:50,bd:40,kw:5.5,W:1050,D:620,av:124,hb:40,Hs:183,Hd:396,pt:510,pr:145,Dc:230,Dm:176,ys:13,yd:118,yo:70,ym1:278,ym2:531,tD:233,tY:396,tZ:472,ph:1000,pw:580,pd:194,pz:1240},
+    pl:{n:"ポンプ台数",bs:"吸込口径 A",bd:"吐出口径 A",kw:"電動機 kW（1台）",W:"共通ベース 長さ",D:"共通ベース 奥行（ボルト芯）",av:"防振架台 高さ（据付時）",hb:"共通ベース 高さ",Hs:"吸込芯（ベース下端から）",Hd:"吐出芯（ベース下端から）",pt:"ポンプピッチ",pr:"右端〜右ポンプ芯",Dc:"ケーシング径",Dm:"モーター径",ys:"ベース前端〜吸込フランジ面",yd:"ベース前端〜吐出立上り芯",yo:"立上り芯〜吐出フランジ面",ym1:"ベース前端〜モーター前端",ym2:"ベース前端〜モーター後端",tD:"圧力タンク径",tY:"ベース前端〜タンク芯",tZ:"タンク天端（ベース下端から）",ph:"制御盤 高さ（本体）",pw:"制御盤 幅（奥行方向）",pd:"制御盤 厚さ",pz:"制御盤 天端（ベース下端から）"},
+    pre:[["PWU-1 KFE50A5.5（川本 KFO-U190507・防振PBKV-1017-5594）",{n:2,bs:50,bd:40,kw:5.5,W:1050,D:620,av:124,hb:40,Hs:183,Hd:396,pt:510,pr:145,Dc:230,Dm:176,ys:13,yd:118,yo:70,ym1:278,ym2:531,tD:233,tY:396,tZ:472,ph:1000,pw:580,pd:194,pz:1240,qw:241}],
+         ["PWU-2 KFE40A3.7（川本 KFO-U210708・防振QGP-55）",{n:2,bs:40,bd:40,kw:3.7,W:1000,D:620,av:122,hb:40,Hs:168,Hd:363,pt:510,pr:125,Dc:200,Dm:163,ys:2,yd:83,yo:70,ym1:262,ym2:506,tD:230,tY:309,tZ:498,ph:900,pw:510,pd:178,pz:1100,qw:207}],
+         ["汎用 32A 1.1kW×2（エバラ実測・防振なし）",{n:2,bs:32,bd:32,kw:1.1,W:720,D:495,av:0,hb:68,Hs:173,Hd:378,pt:420,pr:150,Dc:188,Dm:150,ys:10,yd:100,yo:70,ym1:230,ym2:420,tD:200,tY:330,tZ:450,ph:0,qw:0}]],
     spec:p=>`${p.n}台 吸込${p.bs}A／吐出${p.bd}A　${p.kw}kW×${p.n}　ベース${p.W}×${p.D}${+p.av?`　防振架台H${p.av}`:""}`,
-    noz:p=>[{nm:"吸込",sz:+p.bs,conn:"fl"},{nm:"吐出",sz:+p.bd,conn:"fl"}]},
+    // 自動交互運転：吸込はポンプごと（台数分）、吐出は吐出ヘッダー1口。どちらも正面に出る（並びは 吸込1・吐出・吸込2…＝既存図の接続を保つ）
+    noz:p=>{const n=Math.max(1,+p.n|0),a=[{nm:"吸込1",sz:+p.bs,conn:"fl"},{nm:"吐出",sz:+p.bd,conn:"fl"}];for(let i=2;i<=n;i++)a.push({nm:"吸込"+i,sz:+p.bs,conn:"fl"});return a;}},
+  // 図面（DXF）から取込んだ機器：三面の外形を重ねた箱の集まり＋フランジ接続口
+  imp:{nm:"図面から取込んだ機器",ab:"EQ",geo:"imp",fixed:true,p:{bx:[],nzl:[],W:1000,D:600,H:800},pl:{},
+    spec:p=>`${p.nm||"取込機器"}　${p.W}×${p.D}×${p.H}`,noz:p=>(p.nzl||[]).map(z=>({nm:z.nm,sz:+z.sz,conn:z.conn||"fl"}))},
   // フィルターユニット：寸法はメーカー図で上書き（初期値は概略）
   fu:{nm:"フィルターユニット",ab:"FU",geo:"fu",
     p:{L:600,W:700,H:500,hb:0,dW:600,dH:400,dp:150},pl:{L:"本体 長さ（気流方向）",W:"本体 幅",H:"本体 高さ",hb:"据付高さ（下端）",dW:"接続ダクト 幅",dH:"接続ダクト 高さ",dp:"圧損 Pa（終期・メーカー値）"},
@@ -2861,15 +2942,41 @@ function eqGeo(e){const p=e.p,P=[],N=[],od=sz=>odOf(+sz,curPT());
       else{const z0=hb,z1=hb+B;cyl([0,0,z0],[0,0,z1],Rs,"body");box([0,Rs-Ho,z0+(B-Wo)/2],[sx*Lx,Rs,z0+(B+Wo)/2],"body");
         box([-sx*(Rs+40),-Rs*0.5,0],[-sx*(Rs+40+Rs*1.1),Rs*0.5,hb+Rs],"motor");
         nz([0,0,z1],[0,0,1]);nz([sx*Lx,Rs-Ho/2,z0+B/2],[sx,0,0]);}}
-    else if(G_==="booster"){const av=+p.av||0,n=Math.max(1,+p.n|0),W=+p.W,D=+p.D,hb=av+(+p.hb),Hs=av+(+p.Hs),Hd=av+(+p.Hd),pt=+p.pt,cr=+p.Dc/2,rs=od(p.bs)/2,rd=od(p.bd)/2;
-      if(av)box([-W/2,-D/2-45,0],[W/2,D/2+45,av],"base");box([-W/2,-D/2,av],[W/2,D/2,hb],"base");const ys=-D/2+55,yh=-D/2-60;
-      if(+p.ph>0)box([-W/2+120,-(+p.pw)/2,av+(+p.pz)-(+p.ph)],[-W/2+314,(+p.pw)/2,av+(+p.pz)],"motor");
-      for(let i=0;i<n;i++){const x=(+p.ph>0?60:0)+(-(n-1)/2+i)*pt;cyl([x,ys,Hs],[x,ys+110,Hs],cr,"body");cyl([x,ys+110,Hs],[x,ys+130,Hs],cr*0.72,"metal");
-        cyl([x,ys+130,Hs],[x,ys+130+170*Math.pow(+p.kw/1.1,0.33),Hs],75*Math.pow(+p.kw/1.1,0.28),"motor");
-        cyl([x,yh,Hs],[x,ys,Hs],rs,"metal");cyl([x,ys+50,Hs+cr],[x,ys+50,Hd],rd,"metal");cyl([x,ys+50,Hd],[x,yh,Hd],rd,"metal");}
-      const xo=+p.ph>0?60:0,xL=xo-(n-1)/2*pt,xR=xo+(n-1)/2*pt;cyl([-W/2-60,yh,Hs],[xR,yh,Hs],rs*1.15,"metal");cyl([xL,yh,Hd],[W/2+60,yh,Hd],rd*1.15,"metal");
-      cyl([0,D/2-310,hb+125],[0,D/2-4,hb+125],110,"body");
-      nz([-W/2-60,yh,Hs],[-1,0,0]);nz([W/2+60,yh,Hd],[1,0,0]);}
+    else if(G_==="booster"){const n=Math.max(1,+p.n|0),num=(k,d)=>p[k]!=null&&p[k]!==""&&isFinite(+p[k])?+p[k]:d;
+      const W=num("W",1050),D=num("D",620),av=num("av",0),hb=av+num("hb",40),Hs=av+num("Hs",183),Hd=av+num("Hd",396),pt=num("pt",510),pr=num("pr",(W-(n-1)*pt)/2),
+        cr=num("Dc",230)/2,mr=num("Dm",170)/2,rs=od(p.bs)/2,rd=od(p.bd)/2,yF=-D/2,ys=yF+num("ys",13),yd=yF+num("yd",118),yo=yd-num("yo",70),ym1=yF+num("ym1",278),ym2=yF+num("ym2",531);
+      const flD=sz=>({25:125,32:135,40:140,50:155,65:175,80:185,100:210}[+sz]||od(sz)*2.6)/2,fl=(c,ax,sz,t)=>{const a=c.map((v,i)=>v-ax[i]*t/2),b=c.map((v,i)=>v+ax[i]*t/2);cyl(a,b,flD(sz),"metal");};
+      // 正面＝−y（ベース前端）。川本 KFE-A 外形図：横形多段ポンプ2台（前にケーシング・後ろにモーター）、吸込は各ポンプ正面、吐出はケーシング上→立上り→逆止弁→中央の吐出ヘッダー→正面1口
+      if(av)box([-W/2,yF-15,0],[W/2,-yF+15,av],"base");                                             // 防振架台
+      box([-W/2,yF,av],[W/2,-yF,hb],"base");                                                          // 共通ベース
+      const xs=[];for(let i=0;i<n;i++)xs.push(W/2-pr-(n-1-i)*pt);const xm=xs.reduce((a,v)=>a+v,0)/n;
+      xs.forEach((x,i)=>{
+        cyl([x,ys,Hs],[x,ys+8,Hs],flD(p.bs),"metal");                                                  // 吸込フランジ
+        cyl([x,ys+8,Hs],[x,ys+40,Hs],rs*1.15,"body");cyl([x,ys+40,Hs],[x,ym1-95,Hs],cr,"body");        // 吸込ノズル・ケーシング（多段）
+        box([x-cr*0.75,ys+30,hb],[x+cr*0.75,ym1-110,Hs-cr*0.55],"body");                               // ケーシング脚
+        cyl([x,ym1-95,Hs],[x,ym1-72,Hs],cr*1.08,"metal");cyl([x,ym1-72,Hs],[x,ym1,Hs],cr*0.62,"metal");// ケーシングカバー・ブラケット
+        cyl([x,ym1,Hs],[x,ym1+12,Hs],mr*0.95,"motor");cyl([x,ym1+12,Hs],[x,ym2-45,Hs],mr,"motor");cyl([x,ym2-45,Hs],[x,ym2,Hs],mr*0.9,"motor"); // モーター（フレーム・ファンカバー）
+        box([x-40,ym1+70,Hs+mr-4],[x+40,ym1+150,Hs+mr+38],"motor");                                    // 端子箱（インバーター）
+        box([x-mr*0.8,ym1,hb],[x+mr*0.8,ym2-20,Hs-mr*0.7],"base");                                     // モーター脚
+        const zt=Hs+cr*0.95;fl([x,yd,zt],[0,0,1],p.bd,14);                                             // 吐出フランジ（ケーシング上）
+        cyl([x,yd,zt+7],[x,yd,Hd],rd,"metal");cyl([x,yd,Hd-rd],[x,yd,Hd+rd*1.6],rd*1.12,"metal");      // 立上り・エルボ（上に空気抜き）
+        cyl([x,yd,Hd+rd*1.6],[x,yd,Hd+rd*1.6+18],rd*0.55,"metal");
+        const sg=Math.sign(xm-x)||1,xc=x+sg*130;cyl([x,yd,Hd],[xm,yd,Hd],rd,"metal");                   // 横引き→ヘッダー
+        fl([xc-sg*40,yd,Hd],[1,0,0],p.bd,12);fl([xc+sg*40,yd,Hd],[1,0,0],p.bd,12);cyl([xc-sg*34,yd,Hd],[xc+sg*34,yd,Hd],rd*1.9,"body"); // 逆止弁（フランジ形）
+        cyl([xc,yd,Hd],[xc,yd,Hd+rd*2.2],rd*0.9,"body");});
+      cyl([xm,yd,Hd-rd*1.3],[xm,yd,Hd+rd*1.3],rd*1.35,"metal");                                     // 吐出ヘッダー（十字管）
+      cyl([xm,yd,Hd],[xm,yo+8,Hd],rd,"metal");cyl([xm,yo,Hd],[xm,yo+8,Hd],flD(p.bd),"metal");           // 正面の吐出口
+      cyl([xm,yd,Hd-rd],[xm,yd,hb+45],rd*0.45,"metal");cyl([xm,yd,hb+25],[xm,yd,hb+60],rd*0.8,"metal"); // 排水管・排水弁
+      const tr=num("tD",230)/2,tY=yF+num("tY",396),tZ=av+num("tZ",472);                                 // 圧力タンク（ヘッダーの後ろ）
+      if(tr>0){cyl([xm,tY,tZ-tr*2.1],[xm,tY,tZ-tr*0.25],tr,"tank");cyl([xm,tY,tZ-tr*0.25],[xm,tY,tZ],tr*0.72,"tank");
+        cyl([xm,tY,hb],[xm,tY,tZ-tr*2.1],22,"metal");cyl([xm,yd,Hd],[xm,tY-tr,Hd],rd*0.5,"metal");}
+      if(num("ph",0)>0){const pd=num("pd",190),pw=num("pw",580),pz=av+num("pz",1240),ph=num("ph",1000),py=yF+72;     // 制御盤：左端に立つ・扉は左向き
+        box([-W/2,py,hb],[-W/2+pd,py+pw,pz-ph],"base");box([-W/2,py,pz-ph],[-W/2+pd,py+pw,pz],"motor");
+        box([-W/2-6,py+pw*0.12,pz-ph*0.9],[-W/2,py+pw*0.88,pz-ph*0.1],"body");box([-W/2-14,py+pw*0.8,pz-ph*0.55],[-W/2-6,py+pw*0.84,pz-ph*0.4],"metal");}
+      xs.forEach((x,i)=>{if(i===0){nz([x,ys,Hs],[0,-1,0]);nz([xm,yo,Hd],[0,-1,0]);}else nz([x,ys,Hs],[0,-1,0]);});}
+    else if(G_==="imp"){(p.bx||[]).forEach(b=>box([b[0],b[1],b[2]],[b[3],b[4],b[5]],"body"));(p.cy||[]).forEach(c=>cyl([c[0],c[1],c[2]],[c[3],c[4],c[5]],c[6],"body"));
+      (p.nzl||[]).forEach((z,i)=>{const sz=(e.noz&&e.noz[i]&&+e.noz[i].sz)||+z.sz,d=z.dir,f=z.from,at=t=>f.map((v,k)=>v+d[k]*t),fr={25:125,32:135,40:140,50:155,65:175,80:185,100:210,125:250,150:280,200:330,250:400,300:445}[sz]||od(sz)*2.6;
+        cyl(at(0),at(60),od(sz)/2,"metal");cyl(at(60),at(78),fr/2,"metal");nz(at(78),d);});}
     else if(G_==="fu"){const L=+p.L,W=+p.W,H=+p.H,hb=+p.hb,zc=hb+H/2;box([-L/2,-W/2,hb],[L/2,W/2,hb+H],"body");
       box([-L/2-50,-p.dW/2,zc-p.dH/2],[-L/2,p.dW/2,zc+p.dH/2],"metal");box([L/2,-p.dW/2,zc-p.dH/2],[L/2+50,p.dW/2,zc+p.dH/2],"metal");
       box([-L*0.3,-W/2-12,hb+H*0.2],[L*0.3,-W/2,hb+H*0.8],"motor");/* 点検扉 */
@@ -2971,8 +3078,10 @@ function eqSVG(T,opt){const E=M.eqs||[];if(!E.length)return "";const vv=VIEWV(),
       const P_=window.__EQP||{},SG_=M.segs.filter(x=>P_[x.a]&&P_[x.b]).map(x=>[T(P_[x.a]),T(P_[x.b])]),dS=(q,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],L2=dx*dx+dy*dy||1;let t=((q[0]-a[0])*dx+(q[1]-a[1])*dy)/L2;t=Math.max(0,Math.min(1,t));return Math.hypot(a[0]+dx*t-q[0],a[1]+dy*t-q[1]);};
       const hitE=(c)=>{const pts=[c,[c[0]-rx,c[1]],[c[0]+rx,c[1]],[c[0],c[1]-ry],[c[0],c[1]+ry],[c[0]-rx*0.7,c[1]-ry*0.7],[c[0]+rx*0.7,c[1]+ry*0.7],[c[0]-rx*0.7,c[1]+ry*0.7],[c[0]+rx*0.7,c[1]-ry*0.7]];return SG_.some(([a,b])=>pts.some(q=>dS(q,a,b)<6))||(window.__EQBOX||[]).some(B=>!(c[0]+rx<B[0]||c[0]-rx>B[2]||c[1]+ry<B[1]||c[1]-ry>B[3]));};
       const cands=[[x1+rx+14,my],[x0-rx-14,my],[cx,y0-ry-10],[cx,y1+ry+10],[x1+rx+14,y0-ry],[x0-rx-14,y0-ry],[x1+rx+14,y1+ry],[x0-rx-14,y1+ry],[x1+rx+60,my],[x0-rx-60,my],[cx,y0-ry-60],[cx,y1+ry+60]];
-      const c=cands.find(q=>!hitE(q))||cands[0];(window.__EQBOX=window.__EQBOX||[]).push([c[0]-rx,c[1]-ry,c[0]+rx,c[1]+ry]);
-      out+=`<g><ellipse cx="${c[0]}" cy="${c[1]}" rx="${rx}" ry="${ry}" fill="${PAL.bg}" stroke="${PAL.text}" stroke-width="1.2"/><line x1="${c[0]-rx*0.92}" y1="${c[1]+ry*0.35}" x2="${c[0]+rx*0.92}" y2="${c[1]-ry*0.35}" stroke="${PAL.text}" stroke-width="1"/><text x="${c[0]-4}" y="${c[1]-4}" font-size="12" font-weight="700" text-anchor="middle" fill="${PAL.text}">${esc(t1)}</text><text x="${c[0]+4}" y="${c[1]+15}" font-size="12" font-weight="700" text-anchor="middle" fill="${PAL.text}">${esc(t2)}</text></g>`;}
+      (window.__EQHULL=window.__EQHULL||[]).push([x0,y0,x1,y1]);
+      if(opt.defer){(window.__EQDEF=window.__EQDEF||[]).push({cands,rx,ry,t1,t2,hitE,hull:[x0,y0,x1,y1],cx:(x0+x1)/2,cy:my});}
+      else{const c=cands.find(q=>!hitE(q))||cands[0];(window.__EQBOX=window.__EQBOX||[]).push([c[0]-rx,c[1]-ry,c[0]+rx,c[1]+ry]);
+      out+=`<g><ellipse cx="${c[0]}" cy="${c[1]}" rx="${rx}" ry="${ry}" fill="${PAL.bg}" stroke="${PAL.text}" stroke-width="1.2"/><line x1="${c[0]-rx*0.92}" y1="${c[1]+ry*0.35}" x2="${c[0]+rx*0.92}" y2="${c[1]-ry*0.35}" stroke="${PAL.text}" stroke-width="1"/><text x="${c[0]-4}" y="${c[1]-4}" font-size="12" font-weight="700" text-anchor="middle" fill="${PAL.text}">${esc(t1)}</text><text x="${c[0]+4}" y="${c[1]+15}" font-size="12" font-weight="700" text-anchor="middle" fill="${PAL.text}">${esc(t2)}</text></g>`;}}
     else out+=`<text x="${cx}" y="${top[1]-8}" font-size="12" font-weight="700" text-anchor="middle" fill="${PAL.comp}">${esc(eqName(e))}</text>`;
     // ノズルの名前・口径
     G.N.forEach((n,k)=>{const z=e.noz[k];if(!z)return;const q=T(eqW(e,n.pos)),dq=T(eqW(e,[n.pos[0]+n.dir[0]*60,n.pos[1]+n.dir[1]*60,n.pos[2]+n.dir[2]*60]));
@@ -3048,8 +3157,25 @@ function fitPrims(n,P,sol){if(M.segs.some(x=>(x.a===n.id||x.b===n.id)&&x.duct))r
     return {arc:{pts,r:od/2},trim};}
   const A=tab||od*0.9,K={th:1.3,vth:1.45,wd:1.03,ts:1.2,dv:1.18,sus:1.32}[pt]||1.25,rr=od/2*K,bead={th:1.08,vth:1.06,sus:1.12}[pt]||0;
   const cy=legs.map(l=>({a:w,b:w.map((x,i)=>x+l.v[i]*A),r:rr,v:l.v,A}));const trim={};
-  if(pt!=="wd")legs.forEach(l=>trim[l.s.id+(l.s.a===n.id?"a":"b")]=A*0.85);
-  return {cyl:cy,ball:{c:w,r:rr*(pt==="wd"?1:1.04)},bead,trim};}
+  // 立体の形：ねじ込み（可鍛鋳鉄・管端防食）＝胴＋口元のビード、TS・DV＝受口（差込み深さ分だけ太い）、SUS＝拡管スリーブ
+  const kind=pt==="ts"||pt==="dv"?"sock":pt==="wd"?"wd":"mal",sl=kind==="sock"?(pt==="ts"&&TSSOCK[sz]?TSSOCK[sz]:od*0.75):0,mouth=kind==="sock"?A+sl:A;
+  if(pt!=="wd")legs.forEach(l=>trim[l.s.id+(l.s.a===n.id?"a":"b")]=mouth-0.5);
+  return {cyl:cy,ball:{c:w,r:rr*(pt==="wd"?1:1.04)},bead,trim,kind,A,sl,od,pt,raw:rawPt(legs[0].s),legs:legs.map(l=>l.v)};}
+// TS受口の長さ（差込み深さ）：エスロン HI-TS継手・ゴールド承認図（JIS K 6743）
+const TSSOCK={13:26,16:30,20:35,25:40,30:44,40:55,50:63,65:61,75:64,100:84,125:104,150:132};
+// 管・継手の色（実物寄せ）：SGP白＝亜鉛めっき、VA＝外面一次防錆（茶）、VB＝外面亜鉛めっき、VD＝外面塩ビ被覆（青）、VP＝灰、HIVP＝紺、DV＝灰、SUS＝銀
+const PIPECOL={th:"#c3c9ce",wd:"#aab2b9",vth:"#c3c9ce",vtha:"#8c5a46",vthb:"#c3c9ce",vthd:"#4d7cc0",ts:"#8e959c",hits:"#2f3f73",dv:"#b4b6b8",sus:"#e1e6ea"};
+const FITCOL={th:"#cdd2d6",wd:"#9ea7af",vth:"#52b6e6",vtha:"#52b6e6",vthb:"#52b6e6",vthd:"#52b6e6",ts:"#7d848b",hits:"#36477d",dv:"#c9c4b8",sus:"#e6eaee"};
+const colKey=s=>{const r=rawPt(s);return r==="sgp"?ptOf(s):r;};
+function fitMesh(n,f,P,T,dep,items,on){const F=[],w=P[n.id],r=f.od/2,col=on?"#7cc4ff":(FITCOL[f.raw==="sgp"?f.pt:f.raw]||FITCOL[f.pt]||"#c9ced3");
+  const refOf=v=>{const t=Math.abs(v[2])<0.9?[0,0,1]:[1,0,0];return nrm3(crs3(v,t));};
+  if(f.kind==="mal"){const rb=r*1.17,rbd=r*1.33,bw=Math.max(3,f.A*0.17);
+    f.legs.forEach(v=>mRev(F,w,v,refOf(v),[[0,rb],[f.A-bw,rb],[f.A-bw,rbd],[f.A,rbd],[f.A,r*1.01]],col,20));
+    const sp=[];for(let k=0;k<=8;k++){const a=-Math.PI/2+Math.PI*k/8;sp.push([rb*1.01*Math.sin(a),rb*1.01*Math.cos(a)]);}mRev(F,w,f.legs[0],refOf(f.legs[0]),sp,col,20);}
+  else{const rbo=r*1.1,rs=r*1.24;
+    f.legs.forEach(v=>mRev(F,w,v,refOf(v),[[0,rbo],[f.A,rbo],[f.A,rs],[f.A+f.sl,rs],[f.A+f.sl,r*1.01]],col,20));
+    const sp=[];for(let k=0;k<=8;k++){const a=-Math.PI/2+Math.PI*k/8;sp.push([rbo*1.01*Math.sin(a),rbo*1.01*Math.cos(a)]);}mRev(F,w,f.legs[0],refOf(f.legs[0]),sp,col,20);}
+  mDraw(F,T,dep,items);}
 
 let T3LINE=false;
 const shadeHex=(h,f)=>{const n=parseInt(h.slice(1),16),c=[n>>16,(n>>8)&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(v*f))));return "#"+c.map(v=>v.toString(16).padStart(2,"0")).join("");};
@@ -3072,7 +3198,7 @@ function coneItem(T,A,B,r1,r2,fill,ink,dep,items){const ax=[B[0]-A[0],B[1]-A[1],
 // ===== 部材の立体表現（立体表示モード）：面間は faceOf（カタログ値）、フランジ外径は JIS B 2220 10K の D
 const JFD={15:95,20:100,25:125,32:135,40:140,50:155,65:175,80:185,100:210,125:250,150:280,200:330,250:400,300:445,350:490};
 const ptNd=n=>ptOf(M.segs.find(x=>x.a===n.id||x.b===n.id));
-const SOLIDC=["gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz","flex","flange","union","socket","reducer"];
+const SOLIDC=["mv2","flowm","expj","insj","trap","gate","globe","ball","bfly","check","wcheck","strainer","prv","rpz","flex","flange","union","socket","reducer"];
 function compGeoLen(n){const c=n.comp,sz=nodeSize(n.id),od=odOf(sz,ptNd(n));if(c.t==="flange")return gasket(sz)+40;
   if(["union","socket"].includes(c.t))return od*(c.t==="union"?1.3:1.1);if(c.t==="reducer")return Math.max(od*1.4,60);
   const v=faceOf(c,sz).v,iv=ivsOf(n);return (isNaN(v)?od*2.6:v)+(c.conn==="fl"?2*gasket(sz):0)+(iv?2*iv.ext:0);}
@@ -3091,7 +3217,7 @@ function mBox(F,Cn,ex,ey,ez,hx,hy,hz,col){const P=(a,b,c)=>[0,1,2].map(i=>Cn[i]+
   [[ex,[[1,-1,-1],[1,1,-1],[1,1,1],[1,-1,1]]],[ex.map(x=>-x),[[-1,-1,-1],[-1,-1,1],[-1,1,1],[-1,1,-1]]],[ey,[[-1,1,-1],[-1,1,1],[1,1,1],[1,1,-1]]],[ey.map(x=>-x),[[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1]]],[ez,[[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]]],[ez.map(x=>-x),[[-1,-1,-1],[-1,1,-1],[1,1,-1],[1,-1,-1]]]]
     .forEach(([n,q])=>F.push({p:q.map(v=>P(...v)),c:col,n}));}
 function hexRGB(h){const m=h.replace("#","");return [0,2,4].map(i=>parseInt(m.substr(i,2),16));}
-function mDraw(F,T,dep,items){const V=nrm3(VIEWV()),L=nrm3([V[0]*0.4-0.45,V[1]*0.4+0.2,1.4]),H=nrm3(L.map((v,i)=>v+V[i]));const cache={};
+function mDraw(F,T,dep,items){if(window.__MCAP){F.forEach(f=>window.__MCAP.push(f));return;}const V=nrm3(VIEWV()),L=nrm3([V[0]*0.4-0.45,V[1]*0.4+0.2,1.4]),H=nrm3(L.map((v,i)=>v+V[i]));const cache={};
   F.forEach(f=>{if(dt3(f.n,V)<=0.002)return;const lam=0.36+0.64*Math.max(0,dt3(f.n,L)),sp=Math.pow(Math.max(0,dt3(f.n,H)),28)*0.45,rgb=cache[f.c]||(cache[f.c]=hexRGB(f.c));
     const c="rgb("+rgb.map(v=>Math.round(Math.min(255,v*lam+(255-v*lam)*sp))).join(",")+")",q=f.p.map(T),cn=[0,1,2].map(i=>f.p.reduce((a,p)=>a+p[i],0)/f.p.length);
     items.push({d:dep(cn)+(f.z||0),s:`<polygon points="${q.map(v=>v[0].toFixed(1)+","+v[1].toFixed(1)).join(" ")}" fill="${c}" stroke="${c}" stroke-width=".6" stroke-linejoin="round"/>`});});}
@@ -3100,7 +3226,7 @@ const vhOf=(c,sz,pt)=>{if(c&&c.conn==="th"&&VHSK[c.t]&&(pt||curPT())==="vth"&&VH
 function compSolid(n,P,T,dep,items,ink,on){const c=n.comp,ss=M.segs.filter(x=>(x.a===n.id||x.b===n.id)&&!isDuct(x));if(!ss.length||!P[n.id])return;
   let s0=ss[0];if(c.t==="reducer"){const ri=redInfo(n.id);if(ri)s0=ri.s1;}
   const C=P[n.id],oth=P[s0.a===n.id?s0.b:s0.a];if(!oth)return;let u=nrm3(C.map((v,i)=>v-oth[i]));if(ss.length===1)u=u.map(v=>-v);
-  const IV=ivsOf(n),w=handleW(u,c.rot),v3=crs3(u,w),sz=nodeSize(n.id),pt=ptNd(n),r=odOf(sz,pt)/2,L=compGeoLen(n)-(IV?2*IV.ext:0),F=[];
+  const IV=ivsOf(n),TF=tsfOf(n),w=handleW(u,c.rot),v3=crs3(u,w),szN=nodeSize(n.id),pt=ptNd(n),sz=(pt==="ts"||pt==="dv")&&VPV[szN]?VPV[szN]:szN,r=odOf(szN,pt)/2,L=compGeoLen(n)-(IV?2*IV.ext:0),F=[];
   const at=(t,o=0,q=0)=>[0,1,2].map(i=>C[i]+u[i]*t+w[i]*o+v3[i]*q);
   const fl=c.conn==="fl",th=c.conn==="th",gk0=(fl&&!flNoGk(c))?gasket(sz):0,Lb=L-2*gk0,FD=(JFD[sz]||r*4)/2,tf=JFT[sz]||Math.max(12,FD*0.12),pcd=(JPCD[sz]||FD*1.55)/2,bt=JBOLT[sz]||[4,"M16"],br=+bt[1].slice(1)/2;
   const body=on?"#7cc4ff":th&&pt!=="sus"?MCOL.br:pt==="sus"?MCOL.sus:MCOL.fc,vh=vhOf(c,sz,pt);
@@ -3111,7 +3237,11 @@ function compSolid(n,P,T,dep,items,ink,on){const c=n.comp,ss=M.segs.filter(x=>(x
   // 管側の相フランジ＋パッキン＋ボルト・ナット（直付け側は無し）
   const sd=flFace(c)?flSides(n):[],sA=sd.find(x=>x.s===s0),sB=sd.find(x=>x.s!==s0),boltSet=(x0,x1)=>{for(let k=0;k<bt[0];k++){const a=2*Math.PI*(k+0.5)/bt[0],o=Math.cos(a)*pcd,q=Math.sin(a)*pcd,A=at(x0,o,q),B=at(x1,o,q);mCyl(F,A,B,br,MCOL.bolt,6);
       const dn=x1>x0?1:-1,i0=F.length;mRev(F,at(x1,o,q),u.map(v=>v*dn),w,[[0,0],[0,br*1.75],[br*0.9,br*1.75],[br*0.9,0]],MCOL.bolt,6,0);mRev(F,at(x0,o,q),u.map(v=>-v*dn),w,[[0,0],[0,br*1.75],[br*0.9,br*1.75],[br*0.9,0]],MCOL.bolt,6,0);for(let j=i0;j<F.length;j++)F[j].z=tf*3;}};
-  const pipeFl=(sg,side)=>{if(!sg||sg.direct)return;const o=side*L/2,f1=o+side*tf;revU(side>0?[[o,r*1.02],[o,FD],[f1,FD],[f1,r*1.3],[f1+side*tf*0.7,r*1.3],[f1+side*tf*0.7,r*1.02]]:[[f1+side*tf*0.7,r*1.02],[f1+side*tf*0.7,r*1.3],[f1,r*1.3],[f1,FD],[o,FD],[o,r*1.02]],MCOL.fl);
+  const pipeFl=(sg,side)=>{if(!sg||sg.direct)return;const o=side*L/2,f1=o+side*tf;
+    if(TF){const f2=o+side*TF.t,f3=o+side*TF.L,pv=PIPECOL.hits,pr=(a,b_,R_)=>side>0?[[a,0],[a,R_],[b_,R_],[b_,0]]:[[b_,0],[b_,R_],[a,R_],[a,0]];   // TSフランジ（塩ビ）：フランジ＋受口
+      revU(pr(o,f2,TF.D/2),pv,24);revU(pr(f2,f3,r*1.3),pv,20);if(gk0)revU(side>0?[[o-gk0,r],[o-gk0,pcd-br*1.4],[o,pcd-br*1.4],[o,r]]:[[o,r],[o,pcd-br*1.4],[o+gk0,pcd-br*1.4],[o+gk0,r]],MCOL.blk);
+      if(fl)boltSet(side*(L/2-gk0-tf),f2);return;}
+    revU(side>0?[[o,r*1.02],[o,FD],[f1,FD],[f1,r*1.3],[f1+side*tf*0.7,r*1.3],[f1+side*tf*0.7,r*1.02]]:[[f1+side*tf*0.7,r*1.02],[f1+side*tf*0.7,r*1.3],[f1,r*1.3],[f1,FD],[o,FD],[o,r*1.02]],MCOL.fl);
     if(gk0)revU(side>0?[[o-gk0,r],[o-gk0,pcd-br*1.4],[o,pcd-br*1.4],[o,r]]:[[o,r],[o,pcd-br*1.4],[o+gk0,pcd-br*1.4],[o+gk0,r]],MCOL.blk);
     if(fl||c.conn==="rb")boltSet(side*(L/2-gk0-tf),f1);};
   const HC=on?"#ff8080":isCore(c,pt)?"#1f6fd1":MCOL.red;   // コア内蔵（給水用）はブルーハンドル（キッツ カタログのハンドル色表示）
@@ -3130,8 +3260,8 @@ function compSolid(n,P,T,dep,items,ink,on){const c=n.comp,ss=M.segs.filter(x=>(x
     case "ball":{ends();const b0=-Lb/2+e0,b1=Lb/2-e0;revU([[b0,r*1.3],[b0+2,r*1.55],[b1-2,r*1.55],[b1,r*1.3]]);const H=vh?vh[0]:r*2.4,Lv=vh&&vh[1]?vh[1]:Math.max(L*0.9,70);
       mCyl(F,at(0,r*1.4),at(0,H-6),Math.max(3,r*0.26),MCOL.st,10);revW([[H-12,0],[H-12,Math.max(5,r*0.4)],[H-6,Math.max(5,r*0.4)],[H-6,0]],MCOL.st,6,0);
       mBox(F,at(Lv*0.45,H-3),u,v3,w,Lv*0.5,Math.max(6,r*0.42),2.5,MCOL.st);mBox(F,at(Lv*0.72,H-3),u,v3,w,Lv*0.25,Math.max(7,r*0.5),4.5,on?"#7cc4ff":MCOL.blue);break;}
-    case "bfly":{pipeFl(sA,-1);pipeFl(sB,1);const rb_=pcd-br*1.6;revU([[-L/2,r],[-L/2,rb_],[L/2,rb_],[L/2,r]],body);revU([[-L/2,0],[-L/2,r*0.98],[L/2,r*0.98],[L/2,0]],MCOL.blk,24);
-      if(sA||sB){const xa=sA&&!sA.direct?-(L/2+tf):-L/2,xb=sB&&!sB.direct?L/2+tf:L/2;boltSet(xa,xb);}               // ウエハー形：通しボルト
+    case "bfly":{pipeFl(sA,-1);pipeFl(sB,1);const rb_=pcd-br*1.6,alu=sz<=350?(on?"#7cc4ff":"#c8ced4"):body;revU([[-L/2,r],[-L/2,rb_],[L/2,rb_],[L/2,r]],alu);revU([[-L/2,0],[-L/2,r*0.98],[L/2,r*0.98],[L/2,0]],MCOL.blk,24);
+      if(sA||sB){const tt=TF?TF.t:tf,xa=sA&&!sA.direct?-(L/2+tt):-L/2,xb=sB&&!sB.direct?L/2+tt:L/2;boltSet(xa,xb);}               // ウエハー形：通しボルト
       const nk=FD+25,gb=Math.max(34,r*1.1),gh=Math.max(40,r*0.9),Dw=Math.max(140,Math.min(400,r*3.2));
       mCyl(F,at(0,rb_*0.95),at(0,nk),Math.max(10,r*0.3),body,14);revW([[nk,0],[nk,gb*0.8],[nk+8,gb*0.8],[nk+8,0]],body,4,0);   // ネック＋取付板
       mBox(F,at(0,nk+8+gh/2),u,v3,w,gb*0.65,gb*0.5,gh/2,on?"#7cc4ff":MCOL.blue);                                                  // ギヤボックス
@@ -3145,7 +3275,7 @@ function compSolid(n,P,T,dep,items,ink,on){const c=n.comp,ss=M.segs.filter(x=>(x
       mCyl(F,at(-r*0.6,0,r*1.65),at(r*0.6,0,r*1.65),3,MCOL.yel,6);break;}                       // 流れ方向の目印（側面の矢羽）
     case "strainer":{ends();const b0=-Lb/2+e0,b1=Lb/2-e0;revU([[b0,r*1.25],[b0+(b1-b0)*0.2,r*1.55],[b1-(b1-b0)*0.2,r*1.55],[b1,r*1.25]]);
       const D=nrm3([0,1,2].map(i=>u[i]-w[i])),Hs=vh?vh[0]:r*3.6,ct=Math.max(6,r*0.55),Ls=Math.max(r*1.6,Hs*Math.SQRT2-ct),ref=nrm3(crs3(D,v3));
-      mRev(F,C,D,ref,[[r*0.8,r*0.95],[Ls,r*0.95],[Ls,0]],body,18);mRev(F,C.map((v,i)=>v+D[i]*Ls),D,ref,[[0,0],[0,r*1.15],[ct,r*1.15],[ct,0]],body,6,0);break;}
+      mRev(F,C,D,ref,[[r*0.6,r*0.72],[Ls,r*0.72],[Ls,0]],body,18);mRev(F,C.map((v,i)=>v+D[i]*Ls),D,ref,[[0,0],[0,r*0.86],[ct,r*0.86],[ct,0]],body,6,0);break;}
     case "prv":{ends();const b0=-Lb/2+e0,b1=Lb/2-e0;revU([[b0,r*1.2],[b0+(b1-b0)*0.25,r*1.7],[b1-(b1-b0)*0.25,r*1.7],[b1,r*1.2]]);
       revW([[r*1.5,0],[r*1.5,r*1.15],[r*4.0,r*1.0],[r*4.6,r*0.55],[r*4.6,0]]);mCyl(F,at(0,r*4.5),at(0,r*5.3),Math.max(2.5,r*0.15),MCOL.st,8);
       revW([[r*1.4,0],[r*1.4,r*1.5],[r*1.4+6,r*1.5],[r*1.4+6,0]],body,20);break;}
@@ -3163,6 +3293,12 @@ function compSolid(n,P,T,dep,items,ink,on){const c=n.comp,ss=M.segs.filter(x=>(x
     case "union":{revU([[-L/2,0],[-L/2,r*1.42],[-L*0.05,r*1.42],[-L*0.05,0]],body,6,0);revU([[-L*0.05,0],[-L*0.05,r*1.62],[L/2,r*1.62],[L/2,0]],body,8,0);return mDraw(F,T,dep,items);}
     case "socket":{revU([[-L/2,0],[-L/2,r*1.22],[L/2,r*1.22],[L/2,0]],body,22);return mDraw(F,T,dep,items);}
     case "reducer":{const ri=redInfo(n.id);if(!ri)return;const r1=odOf(szOf(ri.s1),pt)/2,r2=odOf(szOf(ri.s2),pt)/2;revU([[-L/2,0],[-L/2,r1],[L/2,r2],[L/2,0]],th?MCOL.br:MCOL.fl,22);return mDraw(F,T,dep,items);}
+    case "mv2":{ends();const b0=-Lb/2+e0,b1=Lb/2-e0;revU([[b0,r*1.2],[b0+(b1-b0)*0.2,r*1.75],[b1-(b1-b0)*0.2,r*1.75],[b1,r*1.2]]);mCyl(F,at(0,r*1.6),at(0,r*3.2),Math.max(4,r*0.3),MCOL.st,10);
+      mBox(F,at(0,r*3.2+Math.max(45,r*1.6)),u,v3,w,Math.max(55,r*1.9),Math.max(45,r*1.5),Math.max(45,r*1.6),on?"#7cc4ff":"#c9ced6");break;}
+    case "flowm":{ends();const b0=-Lb/2+e0,b1=Lb/2-e0;revU([[b0,r*1.25],[b0,r*1.6],[b1,r*1.6],[b1,r*1.25]]);mBox(F,at(0,r*1.6+40),u,v3,w,Math.max(40,r*1.2),Math.max(30,r),40,on?"#7cc4ff":"#d9dde3");break;}
+    case "expj":{ends();const b0=-Lb/2+e0,b1=Lb/2-e0,nc=Math.max(4,Math.round((b1-b0)/(r*0.5))),pr=[];for(let j=0;j<=nc*4;j++){const x=j/(nc*4);pr.push([b0+(b1-b0)*x,r*1.35+r*0.18*Math.cos(2*Math.PI*nc*x)]);}revU(pr,on?"#bfe3ff":MCOL.sus,20);break;}
+    case "insj":{ends();const b0=-Lb/2+e0,b1=Lb/2-e0;revU([[b0,r*1.3],[b0,r*1.55],[b1,r*1.55],[b1,r*1.3]],body);revU([[-r*0.15,r*1.56],[-r*0.15,r*1.75],[r*0.15,r*1.75],[r*0.15,r*1.56]],MCOL.blk,20);break;}
+    case "trap":{ends();const b0=-Lb/2+e0,b1=Lb/2-e0;revU([[b0,r*1.2],[b0,r*1.5],[b1,r*1.5],[b1,r*1.2]],"#cfd5db");revW([[r*1.4,0],[r*1.4,r*1.2],[r*4,r*1.2],[r*4.4,0]],"#cfd5db",18);break;}
     default:return;}
   pipeFl(sA,-1);pipeFl(sB,1);mDraw(F,T,dep,items);}
 function compSolidOld(n,P,T,dep,items,ink,on){const c=n.comp,ss=M.segs.filter(x=>(x.a===n.id||x.b===n.id)&&!isDuct(x));if(!ss.length||!P[n.id])return;
@@ -3205,7 +3341,8 @@ function compSolidOld(n,P,T,dep,items,ink,on){const c=n.comp,ss=M.segs.filter(x=
   }}
 function solidSVG(sol,P,T,opt){const vv=VIEWV(),dep=w=>w[0]*vv[0]+w[1]*vv[1]+w[2]*vv[2],items=[],ink=PAL.text;
   const JM=ductJointMap(sol);const lbl=eqSVG(T,Object.assign({},opt,{items}));
-  if(JM.size)M.nodes.forEach(n=>{const G=elbowGeo(n,P,sol,JM);if(G){const on=!opt.print&&sel&&sel.k==="n"&&sel.id===n.id;elbowItems(G,T,items,dep,on);}damperItems(n,P,T,sol,JM,items,dep);});const k=trueK(T);
+  if(JM.size)M.nodes.forEach(n=>{const G=elbowGeo(n,P,sol,JM);if(G){const on=!opt.print&&sel&&sel.k==="n"&&sel.id===n.id;elbowItems(G,T,items,dep,on);}damperItems(n,P,T,sol,JM,items,dep);});
+  M.nodes.forEach(n=>{try{termItems(n,P,T,items,dep);}catch(e){console.error(e);}});const k=trueK(T);
   const FP=M.nodes.map(n=>({n,f:fitPrims(n,P,sol)})).filter(x=>x.f),TR={};FP.forEach(x=>Object.assign(TR,x.f.trim||{}));
   const CN=M.nodes.filter(n=>n.comp&&SOLIDC.includes(n.comp.t)&&P[n.id]&&!M.segs.some(x=>(x.a===n.id||x.b===n.id)&&isDuct(x)));
   CN.forEach(n=>{const h=compGeoLen(n)/2;M.segs.forEach(x=>{if(x.a===n.id)TR[x.id+"a"]=Math.max(TR[x.id+"a"]||0,h);if(x.b===n.id)TR[x.id+"b"]=Math.max(TR[x.id+"b"]||0,h);});});
@@ -3215,10 +3352,11 @@ function solidSVG(sol,P,T,opt){const vv=VIEWV(),dep=w=>w[0]*vv[0]+w[1]*vv[1]+w[2
     const on=!opt.print&&((sel&&sel.k==="s"&&sel.id===s.id)||SELS.has(s.id));
     if(isDuct(s)){ductItem(s,P,T,sol,items,dep,on,JM);return;}
     (s.boss||[]).forEach(b=>{const t=Math.max(0,Math.min(1,b.pos/(((s.cc??s.est)||L)))),C=A.map((x,i)=>x+(B[i]-x)*t),D=DIRS[b.d]||[0,0,1],rb=odOf(b.sz,"th")/2,E1=C.map((x,i)=>x+D[i]*r*0.9),E2=C.map((x,i)=>x+D[i]*(r+Math.max(25,rb*2.2)));cylItem(T,E1,E2,rb*1.25,"#8a8f96",ink,dep,items,false,true);});
-    cylItem(T,A2,B2,r,on?"#7cc4ff":(sysCol(s,true)?mixW(sysCol(s,true),0.35):hex(pt)),ink,dep,items,sol.fit[s.a]==="none"&&!node(s.a).comp,sol.fit[s.b]==="none"&&!node(s.b).comp);});
+    cylItem(T,A2,B2,r,on?"#7cc4ff":(sysCol(s,true)?mixW(sysCol(s,true),0.35):(PIPECOL[colKey(s)]||hex(pt))),ink,dep,items,sol.fit[s.a]==="none"&&!node(s.a).comp,sol.fit[s.b]==="none"&&!node(s.b).comp);});
   FP.forEach(({n,f})=>{const pt=ptOf(M.segs.find(x=>x.a===n.id||x.b===n.id)),fc=FC[pt]||hex(pt);
     if(f.arc){const d=f.arc.pts.map(T).map((q,i)=>(i?"L":"M")+q[0].toFixed(1)+" "+q[1].toFixed(1)).join(""),w=f.arc.r*2*k;
       items.push({d:dep(P[n.id]),s:`<path d="${d}" fill="none" stroke="${ink}" stroke-width="${w+1.6}"/><path d="${d}" fill="none" stroke="${hex(pt)}" stroke-width="${w}"/>`});return;}
+    if(f.kind==="mal"||f.kind==="sock"){try{fitMesh(n,f,P,T,dep,items,!opt.print&&sel&&sel.k==="n"&&sel.id===n.id);}catch(e){console.error(e);}return;}
     const c=T(f.ball.c);items.push({d:dep(f.ball.c),s:`<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${(f.ball.r*k).toFixed(1)}" fill="${fc}" stroke="${ink}" stroke-width=".8"/>`});
     f.cyl.forEach(cy=>{cylItem(T,cy.a,cy.b,cy.r,fc,ink,dep,items,false,true);
       if(f.bead){const a=cy.a.map((x,i)=>x+cy.v[i]*cy.A*0.78);cylItem(T,a,cy.b,cy.r*f.bead,shadeHex(fc,0.95),ink,dep,items,true,true);}});});
@@ -3265,6 +3403,12 @@ function init3(){const box=$("v3"),R_=new THREE.WebGLRenderer({antialias:true});
   $("v3iso").onclick=()=>{T3.az=-2.36+ROT*Math.PI/2;T3.el=0.615;draw3();};
   $("v3top").onclick=()=>{T3.az=-Math.PI/2;T3.el=1.5;draw3();};
   $("v3lbl").onclick=()=>{t3lbl=!t3lbl;$("v3lbl").classList.toggle("on",t3lbl);draw3();};}
+// 立体表示と同じ部材の形を3D表示にも使う：面（多角形）をそのまま three.js のメッシュにする
+function capMesh(fn){window.__MCAP=[];try{fn();}catch(e){console.error(e);}const F=window.__MCAP;window.__MCAP=null;return F;}
+function facesTo3(F,g){if(!F||!F.length)return null;const pos=[],col=[],nor=[],cc={};
+  F.forEach(f=>{const rgb=cc[f.c]||(cc[f.c]=hexRGB(f.c).map(v=>v/255));for(let i=1;i+1<f.p.length;i++){[f.p[0],f.p[i],f.p[i+1]].forEach(q=>{pos.push(q[0],q[1],q[2]);col.push(...rgb);nor.push(f.n[0],f.n[1],f.n[2]);});}});
+  const ge=new THREE.BufferGeometry();ge.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));ge.setAttribute("color",new THREE.Float32BufferAttribute(col,3));ge.setAttribute("normal",new THREE.Float32BufferAttribute(nor,3));
+  const m=new THREE.Mesh(ge,new THREE.MeshStandardMaterial({vertexColors:true,metalness:0.3,roughness:0.55,side:THREE.DoubleSide}));g.add(m);return m;}
 async function build3D(){if(!$("v3"))return;await load3();if(!T3)init3();$("v3msg").textContent=M.segs.length?"":"2Dで配管を描くとここに立体で出る";
   const {sc}=T3;if(T3.g){sc.remove(T3.g);T3.g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});}
   const g=new THREE.Group(),P=layout3(),sol=LAST.sol,up=new THREE.Vector3(0,1,0);T3.labs=[];T3.segMesh=[];
@@ -3275,11 +3419,14 @@ async function build3D(){if(!$("v3"))return;await load3();if(!T3)init3();$("v3ms
   const FT3={};if(!T3LINE)M.nodes.forEach(n=>{const f=fitPrims(n,P,sol);if(f&&f.trim)Object.assign(FT3,f.trim);});
   const trimP=(s)=>{const A=P[s.a],B=P[s.b],L=Math.hypot(B[0]-A[0],B[1]-A[1],B[2]-A[2])||1,ta=Math.min(FT3[s.id+"a"]||0,L*0.45),tb=Math.min(FT3[s.id+"b"]||0,L*0.45);return [A.map((x,i)=>x+(B[i]-x)*ta/L),B.map((x,i)=>x+(A[i]-x)*tb/L)];};
   window.__JM=ductJointMap(sol);M.segs.forEach(s=>{if(!P[s.a]||!P[s.b])return;if(isDuct(s)&&!T3LINE){const on=(sel&&sel.k==="s"&&sel.id===s.id)||SELS.has(s.id);const m=ductMesh(s,P,sol,g,V,on);m.userData.sid=s.id;T3.segMesh.push(m);T3.labs.push({p:P[s.a].map((v,k)=>(v+P[s.b][k])/2),t:`${idx(s)} ${ductLab(s.duct)}`});return;}const pt=ptOf(s),r=T3LINE?rMin*0.5:Math.max(odOf(szOf(s),pt)/2,rMin),on=(sel&&sel.k==="s"&&sel.id===s.id)||SELS.has(s.id);
-    const tp=trimP(s),m=cyl(tp[0],tp[1],r,r,on?0xff9f1a:PCOL[pt]);if(m){m.userData.sid=s.id;T3.segMesh.push(m);}
+    const tp=trimP(s),m=cyl(tp[0],tp[1],r,r,on?0xff9f1a:(PIPECOL[colKey(s)]?parseInt(PIPECOL[colKey(s)].slice(1),16):PCOL[pt]));if(m){m.userData.sid=s.id;T3.segMesh.push(m);}
     const c=sol.cut[s.id];T3.labs.push({p:P[s.a].map((v,k)=>(v+P[s.b][k])/2),t:`${idx(s)}${s.cc!=null&&c&&c.ok?" L="+fmtL(c.L):""}`});});
-  if(!T3LINE&&M.segs.some(isDuct))duct3DNodes(P,sol,g,V);
+  if(!T3LINE&&M.segs.some(isDuct)){duct3DNodes(P,sol,g,V);M.nodes.forEach(n=>{if(n.comp&&DTERM.includes(n.comp.t)){const F=capMesh(()=>termItems(n,P,()=>[0,0],[],()=>0));facesTo3(F,g);}});}
   M.nodes.forEach(n=>{const w=P[n.id];if(!w)return;const ss=M.segs.filter(s=>s.a===n.id||s.b===n.id);if(!ss.length)return;if(!T3LINE&&ss.some(isDuct))return;
     const sz=Math.max(...ss.map(szOf)),pt=ptOf(ss[0]),r=T3LINE?rMin*0.5:Math.max(odOf(sz,pt)/2,rMin),f=sol.fit[n.id];
+    if(!T3LINE){const dz=()=>0,TT=()=>[0,0];
+      if(n.comp&&SOLIDC.includes(n.comp.t)){const F=capMesh(()=>compSolid(n,P,TT,dz,[],"#000",false));if(F.length){facesTo3(F,g);T3.labs.push({p:[w[0],w[1],w[2]+r*3],t:n.comp.label||(PARTS[n.comp.t]||[""])[1],c:"#ff8a8a"});return;}}
+      if(!n.comp){const fp=fitPrims(n,P,sol);if(fp&&(fp.kind==="mal"||fp.kind==="sock")){const F=capMesh(()=>fitMesh(n,fp,P,TT,dz,[],false));if(F.length){facesTo3(F,g);return;}}}}
     if(!n.comp){const fp=T3LINE?null:fitPrims(n,P,sol);
       if(fp&&fp.arc){for(let i=1;i<fp.arc.pts.length;i++)cyl(fp.arc.pts[i-1],fp.arc.pts[i],fp.arc.r,fp.arc.r,PCOL[pt]);}
       else if(fp){fp.cyl.forEach(cy=>cyl(cy.a,cy.b,cy.r,cy.r,PCOL[pt]-0x101010));const m=new THREE.Mesh(new THREE.SphereGeometry(fp.ball.r,20,14),new THREE.MeshStandardMaterial({color:PCOL[pt]-0x101010,metalness:0.35,roughness:0.5}));m.position.copy(V(w));g.add(m);}
@@ -3321,6 +3468,7 @@ const HELP=[
  ["部材・ハンドルの向き",`<ul><li>弁やダンパーを選ぶと緑の▼が出る。▼（または右の「ハンドル・操作部を回す」）を押すと<b>回転中</b>になり、<b>画面のどこをタップしても</b>45°（角ダクトのダンパーは90°）ずつ回る。上のバーの「決定」で終了。</li><li>回転中も指ドラッグ・ピンチで画面は動かせる。</li></ul>`],
  ["系統・色",`<ul><li>配管を選んで右の欄の「系統」→「＋ 新しい系統…」で名前（CS・CR など）を付けると、<b>つながってる配管に丸ごと付与</b>される（機器の接続口で止まる）。</li><li>系統名は口径の横に「65A CS」の形で出る。色は「図面情報・条件」→「系統」で CAD と同じ基本16色・カラーインデックスから選べる。</li></ul>`],
  ["溶接の作図設定",`<ul><li>90°エルボの既定（ロング／ショート）は「図面情報・条件」→「作図設定」。個別はエルボの点を選んで切替え、既定と違うものは図に「ショート」「ロング」と出る。</li><li>径違いTの規格（JIS B 2311）にない組合せの分岐は<b>バーリング取出し</b>として切寸法・数量表を出す。</li><li><b>PTボス</b>：部材 →「継手」→ PTボス で配管をタップ（位置・口径・向きは右の欄）。図には「SK20A」の旗で出る。</li></ul>`],
+ ["DXFから機器を作る",`<ul><li>「機器…」→ 一番上の「📄 DXFから機器を作る」→ メーカー外形図のDXFを選ぶ（DWGはTfas・AutoCADでDXF保存してから）。</li><li>「平面」「正面」「側面」を押して、それぞれの図をドラッグで囲む（寸法・引出線は多少入ってもいい。表題欄・注記は入れない）。</li><li>三面の外形を重ねて立体にする。フランジ（ボルト孔の円並び）は自動で探して接続口にする（口径はJIS 10K のボルト中心円径から）。違うのはチェックを外す・口径を直す。</li><li>「機器として使う」で機器ウインドウに入る。作った機器は「DXFから作った機器」に残る。</li><li>形は外形の重ね合わせなので概略（細かい凹凸・曲面は箱の段々になる）。メーカー図で側面に部品が省かれてると、その分は正面・平面から補う。</li></ul>`],
  ["機器番号",`<ul><li>機器を選んで「機器番号」を入れると、機器のそばに楕円（上段＝機種名、下段＝番号）で出る。配管が通る所は避けて空いてる所に置く。</li></ul>`],
  ["範囲選択・複写",`<ul><li>範囲選択モードでドラッグで囲む → 右の欄で複写・移動・削除。</li><li>PC：Ctrl+C／Delete、Esc で中止。</li></ul>`],
  ["表示",`<ul><li>「表示：立体」で部材・配管を立体で描く（フランジ・パッキン・ボルトまで）。視点は南・西・北・東。</li><li>警告は左下の「⚠ 件数」をタップすると下の一覧に飛ぶ。</li></ul>`],
@@ -3344,7 +3492,8 @@ $("fImport").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const
   DR.cur=Math.min(DR.cur||0,DR.list.length-1);const d=DR.list[DR.cur];M=d.M;view=d.view||view;ROT=d.rot||0;computeSV();undo=[];sel=null;SELS=new Set();
   if(M.pt)$("isoJ").value=curPT();sizeOpts();render();fitView();save();toast(`読み込みました（${DR.list.length}図面）`);}catch(err){toast("読み込めないファイル（このアプリの書き出しデータを選んで）");}e.target.value="";};
 $("elbDef").onchange=e=>{push();M.elb=e.target.value;render();};
-$("bSet").onclick=()=>{$("setPanel").classList.toggle("open");renderSysList();if($("elbDef"))$("elbDef").value=M.elb||"L";renderKeys();syncColUI();$("bPen").classList.toggle("on",PEN);};
+$("mNote").oninput=e=>{M.note=e.target.value;saveSoon();};
+$("bSet").onclick=()=>{$("setPanel").classList.toggle("open");if($("mNote"))$("mNote").value=M.note||"";renderSysList();if($("elbDef"))$("elbDef").value=M.elb||"L";renderKeys();syncColUI();$("bPen").classList.toggle("on",PEN);};
 $("bPen").onclick=()=>{PEN=!PEN;try{localStorage.setItem("isoPen",PEN?"1":"0");}catch(e){}$("bPen").classList.toggle("on",PEN);mode=BASE();render();};
 $("bKeyReset").onclick=()=>{KMAP=Object.assign({},KDEF);try{localStorage.removeItem("isoKeymap");}catch(e){}renderKeys();};
 $("tgDark").onclick=()=>{DISP.bg=DISP.bg==="black"?"white":"black";render();syncColUI();};
@@ -3488,7 +3637,13 @@ function pbAfterStart(st){const fl=pbStartFL();if(fl==null||M.lv)return;M.lv={no
     <div class="ft"><span class="mut" id="ewM" style="margin-right:auto;font-size:11.5px;color:#8b8b95;align-self:center"></span><button id="ewC">キャンセル</button><button class="go" id="ewGo">図面に置く（位置をタップ）</button></div></div>`;
   document.body.appendChild(W);
   const LASTFL={};let cur=null;
-  $("ewL").innerHTML=CAT.map(([c,ts])=>`<div class="cat">${c}</div>`+ts.filter(t=>EQT[t]).map(t=>`<button data-t="${t}">${EQT[t].nm}</button>`).join("")).join("");
+  const LIB=()=>{try{return JSON.parse(localStorage.getItem("ISO_EQLIB")||"[]");}catch(_){return [];}};
+  function listEW(){$("ewL").innerHTML=`<button id="ewImp" style="background:#2f6fd0;color:#fff;border-color:#2f6fd0">📄 DXFから機器を作る…</button>`+CAT.map(([c,ts])=>`<div class="cat">${c}</div>`+ts.filter(t=>EQT[t]).map(t=>`<button data-t="${t}">${EQT[t].nm}</button>`).join("")).join("")
+      +(LIB().length?`<div class="cat">DXFから作った機器</div>`+LIB().map((x,i)=>`<button data-lib="${i}">${esc(x.nm||"取込機器")}</button>`).join(""):"");
+    $("ewL").querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>pick(b.dataset.t));
+    $("ewL").querySelectorAll("[data-lib]").forEach(b=>b.onclick=()=>{const x=LIB()[+b.dataset.lib];if(x)window.openEqWinImp(x,x.nm);});
+    $("ewImp").onclick=()=>{close();window.openImport&&window.openImport();};}
+  listEW();
   const SZ=[15,20,25,32,40,50,65,80,100,125,150,200,250,300];
   function pick(t){const T_=EQT[t];const p=Object.assign({},T_.p);cur={t,p,noz:T_.noz(p).map(z=>Object.assign({},z)),lab:"",fl:LASTFL[t]??0};draw();}
   function regen(){const T_=EQT[cur.t],n=T_.noz(cur.p);cur.noz=n.map((z,i)=>{const o=cur.noz[i];return z.duct?z:o?Object.assign(z,{nm:o.nm,sz:o.sz,conn:o.conn}):z;});}
@@ -3503,7 +3658,7 @@ function pbAfterStart(st){const fl=pbStartFL();if(fl==null||M.lv)return;M.lv={no
     const fz=-(+cur.p.hb||0)*0;const fl=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([a,b])=>{const L=Math.max(cur.p.W||cur.p.Dd||cur.p.L||1000,cur.p.D||cur.p.Dd||600)*0.75;return T([a*L,b*L,fz]);});
     $("ewP").style.background=PAL.bg;
     $("ewP").innerHTML=`<svg viewBox="0 0 ${VW} ${VH}"><path d="M${fl.map(p=>p.join(" ")).join("L")}Z" fill="none" stroke="${PAL.text}" stroke-opacity=".25" stroke-dasharray="4 3"/><text x="${fl[0][0]}" y="${fl[0][1]+14}" font-size="11" fill="${PAL.text}" fill-opacity=".55">据付面 FL+${cur.fl}</text>${g}</svg>`;}
-  function draw(){const T_=EQT[cur.t];$("ewL").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.t===cur.t));
+  function draw(){const T_=EQT[cur.t];$("ewL").querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===cur.t));
     const e=tmpE(),G=eqGeo(e),lv=levelInfo();
     $("ewF").innerHTML=`<label>機器番号・名称（図・材料表）</label><input id="ewLab" value="${esc(cur.lab)}" placeholder="空欄＝${T_.ab}-連番">
       <div class="fl"><label style="color:#cfe0ff">据付面の高さ　FL＋（床なら0／屋上・基礎・天井吊りはその面の高さ）</label><input id="ewFL" type="number" inputmode="decimal" value="${cur.fl}"></div>
@@ -3523,7 +3678,8 @@ function pbAfterStart(st){const fl=pbStartFL();if(fl==null||M.lv)return;M.lv={no
   window.openEqWin=t=>{W.classList.add("show");pick(t||(cur&&cur.t)||"pumpE");};
   const close=()=>W.classList.remove("show");
   ebtn.onclick=()=>openEqWin();$("ewX").onclick=close;$("ewC").onclick=close;W.onclick=e=>{if(e.target===W)close();};
-  $("ewL").querySelectorAll("button").forEach(b=>b.onclick=()=>pick(b.dataset.t));
+  window.openEqWinImp=(p,nm)=>{listEW();W.classList.add("show");const q=JSON.parse(JSON.stringify(p));cur={t:"imp",p:q,noz:EQT.imp.noz(q).map(z=>Object.assign({},z)),lab:"",fl:LASTFL.imp??0};draw();
+    $("ewL").querySelectorAll("[data-lib]").forEach(b=>b.classList.toggle("on",b.textContent===nm));};
   $("ewGo").onclick=()=>{window.EQPEND={t:cur.t,p:Object.assign({},cur.p),noz:cur.noz.map(z=>Object.assign({},z)),lab:cur.lab,fl:cur.fl};EQPICK=cur.t;mode="eq";sel=null;close();render();toast(`${EQT[cur.t].nm}：置きたい所をタップ（据付面 FL+${cur.fl}）`);};
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&W.classList.contains("show"))close();});
   // 旧：機器モードに直接入ったらウインドウを開く
@@ -3979,6 +4135,287 @@ function(t){var e=function(){return void 0===this.internal.vFS&&(this.internal.v
    */
 function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,o,s,c,u=e,l=[[0,3,0,1,0,0,0],[0,3,0,1,2,2,0],[0,3,0,17,2,0,1],[0,3,5,5,4,1,0],[0,3,21,21,4,0,1],[0,3,5,5,4,2,0]],h=[[2,0,1,1,0,1,0],[2,0,1,1,0,2,0],[2,0,2,1,3,2,0],[2,0,2,33,3,1,1]],f={L:0,R:1,EN:2,AN:3,N:4,B:5,S:6},d={0:0,5:1,6:2,7:3,32:4,251:5,254:6,255:7},p=["(",")","(","<",">","<","[","]","[","{","}","{","«","»","«","‹","›","‹","⁅","⁆","⁅","⁽","⁾","⁽","₍","₎","₍","≤","≥","≤","〈","〉","〈","﹙","﹚","﹙","﹛","﹜","﹛","﹝","﹞","﹝","﹤","﹥","﹤"],g=new RegExp(/^([1-4|9]|1[0-9]|2[0-9]|3[0168]|4[04589]|5[012]|7[78]|159|16[0-9]|17[0-2]|21[569]|22[03489]|250)$/),m=!1,v=0;this.__bidiEngine__={};var b=function(t){var e=t.charCodeAt(),r=e>>8,n=d[r];return void 0!==n?u[256*n+(255&e)]:252===r||253===r?"AL":g.test(r)?"L":8===r?"R":"N"},y=function(t){for(var e,r=0;r<t.length;r++){if("L"===(e=b(t.charAt(r))))return!1;if("R"===e)return!0}return!1},w=function(t,e,o,s){var c,u,l,h,f=e[s];switch(f){case"L":case"R":m=!1;break;case"N":case"AN":break;case"EN":m&&(f="AN");break;case"AL":m=!0,f="R";break;case"WS":f="N";break;case"CS":s<1||s+1>=e.length||"EN"!==(c=o[s-1])&&"AN"!==c||"EN"!==(u=e[s+1])&&"AN"!==u?f="N":m&&(u="AN"),f=u===c?u:"N";break;case"ES":f="EN"===(c=s>0?o[s-1]:"B")&&s+1<e.length&&"EN"===e[s+1]?"EN":"N";break;case"ET":if(s>0&&"EN"===o[s-1]){f="EN";break}if(m){f="N";break}for(l=s+1,h=e.length;l<h&&"ET"===e[l];)l++;f=l<h&&"EN"===e[l]?"EN":"N";break;case"NSM":if(i&&!a){for(h=e.length,l=s+1;l<h&&"NSM"===e[l];)l++;if(l<h){var d=t[s],p=d>=1425&&d<=2303||64286===d;if(c=e[l],p&&("R"===c||"AL"===c)){f="R";break}}}f=s<1||"B"===(c=e[s-1])?"N":o[s-1];break;case"B":m=!1,r=!0,f=v;break;case"S":n=!0,f="N";break;case"LRE":case"RLE":case"LRO":case"RLO":case"PDF":m=!1;break;case"BN":f="N"}return f},N=function(t,e,r){var n=t.split("");return r&&L(n,r,{hiLevel:v}),n.reverse(),e&&e.reverse(),n.join("")},L=function(t,e,i){var a,o,s,c,u,d=-1,p=t.length,g=0,y=[],N=v?h:l,L=[];for(m=!1,r=!1,n=!1,o=0;o<p;o++)L[o]=b(t[o]);for(s=0;s<p;s++){if(u=g,y[s]=w(t,L,y,s),a=240&(g=N[u][f[y[s]]]),g&=15,e[s]=c=N[g][5],a>0)if(16===a){for(o=d;o<s;o++)e[o]=1;d=-1}else d=-1;if(N[g][6])-1===d&&(d=s);else if(d>-1){for(o=d;o<s;o++)e[o]=c;d=-1}"B"===L[s]&&(e[s]=0),i.hiLevel|=c}n&&function(t,e,r){for(var n=0;n<r;n++)if("S"===t[n]){e[n]=v;for(var i=n-1;i>=0&&"WS"===t[i];i--)e[i]=v}}(L,e,p)},A=function(t,e,n,i,a){if(!(a.hiLevel<t)){if(1===t&&1===v&&!r)return e.reverse(),void(n&&n.reverse());for(var o,s,c,u,l=e.length,h=0;h<l;){if(i[h]>=t){for(c=h+1;c<l&&i[c]>=t;)c++;for(u=h,s=c-1;u<s;u++,s--)o=e[u],e[u]=e[s],e[s]=o,n&&(o=n[u],n[u]=n[s],n[s]=o);h=c}h++}}},x=function(t,e,r){var n=t.split(""),i={hiLevel:v};return r||(r=[]),L(n,r,i),function(t,e,r){if(0!==r.hiLevel&&c)for(var n,i=0;i<t.length;i++)1===e[i]&&(n=p.indexOf(t[i]))>=0&&(t[i]=p[n+1])}(n,r,i),A(2,n,e,r,i),A(1,n,e,r,i),n.join("")};return this.__bidiEngine__.doBidiReorder=function(t,e,r){if(function(t,e){if(e)for(var r=0;r<t.length;r++)e[r]=r;void 0===a&&(a=y(t)),void 0===s&&(s=y(t))}(t,e),i||!o||s)if(i&&o&&a^s)v=a?1:0,t=N(t,e,r);else if(!i&&o&&s)v=a?1:0,t=x(t,e,r),t=N(t,e);else if(!i||a||o||s){if(i&&!o&&a^s)t=N(t,e),a?(v=0,t=x(t,e,r)):(v=1,t=x(t,e,r),t=N(t,e));else if(i&&a&&!o&&s)v=1,t=x(t,e,r),t=N(t,e);else if(!i&&!o&&a^s){var n=c;a?(v=1,t=x(t,e,r),v=0,c=!1,t=x(t,e,r),c=n):(v=0,t=x(t,e,r),t=N(t,e),v=1,c=!1,t=x(t,e,r),c=n,t=N(t,e))}}else v=0,t=x(t,e,r);else v=a?1:0,t=x(t,e,r);return t},this.__bidiEngine__.setOptions=function(t){t&&(i=t.isInputVisual,o=t.isOutputVisual,a=t.isInputRtl,s=t.isOutputRtl,c=t.isSymmetricSwapping)},this.__bidiEngine__.setOptions(t),this.__bidiEngine__};var e=["BN","BN","BN","BN","BN","BN","BN","BN","BN","S","B","S","WS","B","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","B","B","B","S","WS","N","N","ET","ET","ET","N","N","N","N","N","ES","CS","ES","CS","CS","EN","EN","EN","EN","EN","EN","EN","EN","EN","EN","CS","N","N","N","N","N","N","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","N","N","N","N","N","N","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","N","N","N","N","BN","BN","BN","BN","BN","BN","B","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","CS","N","ET","ET","ET","ET","N","N","N","N","L","N","N","BN","N","N","ET","ET","EN","EN","N","L","N","N","N","EN","L","N","N","N","N","N","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","N","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","N","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","N","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","N","N","L","L","L","L","L","L","L","N","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","N","L","N","N","N","N","N","ET","N","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","R","NSM","R","NSM","NSM","R","NSM","NSM","R","NSM","N","N","N","N","N","N","N","N","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","N","N","N","N","N","R","R","R","R","R","N","N","N","N","N","N","N","N","N","N","N","AN","AN","AN","AN","AN","AN","N","N","AL","ET","ET","AL","CS","AL","N","N","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","AL","AL","N","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","AN","AN","AN","AN","AN","AN","AN","AN","AN","AN","ET","AN","AN","AL","AL","AL","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","AN","N","NSM","NSM","NSM","NSM","NSM","NSM","AL","AL","NSM","NSM","N","NSM","NSM","NSM","NSM","AL","AL","EN","EN","EN","EN","EN","EN","EN","EN","EN","EN","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","N","AL","AL","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","N","N","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","AL","N","N","N","N","N","N","N","N","N","N","N","N","N","N","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","R","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","R","R","N","N","N","N","R","N","N","N","N","N","WS","WS","WS","WS","WS","WS","WS","WS","WS","WS","WS","BN","BN","BN","L","R","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","WS","B","LRE","RLE","PDF","LRO","RLO","CS","ET","ET","ET","ET","ET","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","CS","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","WS","BN","BN","BN","BN","BN","N","LRI","RLI","FSI","PDI","BN","BN","BN","BN","BN","BN","EN","L","N","N","EN","EN","EN","EN","EN","EN","ES","ES","N","N","N","L","EN","EN","EN","EN","EN","EN","EN","EN","EN","EN","ES","ES","N","N","N","N","L","L","L","L","L","L","L","L","L","L","L","L","L","N","N","N","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","ET","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","L","L","L","L","L","L","L","N","N","N","N","N","N","N","N","N","N","N","N","L","L","L","L","L","N","N","N","N","N","R","NSM","R","R","R","R","R","R","R","R","R","R","ES","R","R","R","R","R","R","R","R","R","R","R","R","R","N","R","R","R","R","R","N","R","N","R","R","N","R","R","N","R","R","R","R","R","R","R","R","R","R","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","CS","N","CS","N","N","CS","N","N","N","N","N","N","N","N","N","ET","N","N","ES","ES","N","N","N","N","N","ET","ET","N","N","N","N","N","AL","AL","AL","AL","AL","N","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","N","N","BN","N","N","N","ET","ET","ET","N","N","N","N","N","ES","CS","ES","CS","CS","EN","EN","EN","EN","EN","EN","EN","EN","EN","EN","CS","N","N","N","N","N","N","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","N","N","N","N","N","N","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","N","N","N","N","N","N","N","N","N","N","N","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","N","N","N","L","L","L","L","L","L","N","N","L","L","L","L","L","L","N","N","L","L","L","L","L","L","N","N","L","L","L","N","N","N","ET","ET","N","N","N","ET","ET","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N"],r=new t.__bidiEngine__({isInputVisual:!0});t.API.events.push(["postProcessText",function(t){var e=t.text,n=(t.x,t.y,t.options||{}),i=(t.mutex,n.lang,[]);if(n.isInputVisual="boolean"!=typeof n.isInputVisual||n.isInputVisual,r.setOptions(n),"[object Array]"===Object.prototype.toString.call(e)){var a=0;for(i=[],a=0;a<e.length;a+=1)"[object Array]"===Object.prototype.toString.call(e[a])?i.push([r.doBidiReorder(e[a][0]),e[a][1],e[a][2]]):i.push([r.doBidiReorder(e[a])]);t.text=i}else t.text=r.doBidiReorder(e);r.setOptions({isInputVisual:!0})}])}(M),M.API.TTFFont=function(){function t(t){var e;if(this.rawData=t,e=this.contents=new Te(t),this.contents.pos=4,"ttcf"===e.readString(4))throw new Error("TTCF not supported.");e.pos=0,this.parse(),this.subset=new ar(this),this.registerTTF()}return t.open=function(e){return new t(e)},t.prototype.parse=function(){return this.directory=new Ue(this.contents),this.head=new We(this),this.name=new Ze(this),this.cmap=new Ge(this),this.toUnicode={},this.hhea=new Ye(this),this.maxp=new $e(this),this.hmtx=new Qe(this),this.post=new Xe(this),this.os2=new Je(this),this.loca=new ir(this),this.glyf=new er(this),this.ascender=this.os2.exists&&this.os2.ascender||this.hhea.ascender,this.decender=this.os2.exists&&this.os2.decender||this.hhea.decender,this.lineGap=this.os2.exists&&this.os2.lineGap||this.hhea.lineGap,this.bbox=[this.head.xMin,this.head.yMin,this.head.xMax,this.head.yMax]},t.prototype.registerTTF=function(){var t,e,r,n,i;if(this.scaleFactor=1e3/this.head.unitsPerEm,this.bbox=function(){var e,r,n,i;for(i=[],e=0,r=(n=this.bbox).length;e<r;e++)t=n[e],i.push(Math.round(t*this.scaleFactor));return i}.call(this),this.stemV=0,this.post.exists?(r=255&(n=this.post.italic_angle),0!=(32768&(e=n>>16))&&(e=-(1+(65535^e))),this.italicAngle=+(e+"."+r)):this.italicAngle=0,this.ascender=Math.round(this.ascender*this.scaleFactor),this.decender=Math.round(this.decender*this.scaleFactor),this.lineGap=Math.round(this.lineGap*this.scaleFactor),this.capHeight=this.os2.exists&&this.os2.capHeight||this.ascender,this.xHeight=this.os2.exists&&this.os2.xHeight||0,this.familyClass=(this.os2.exists&&this.os2.familyClass||0)>>8,this.isSerif=1===(i=this.familyClass)||2===i||3===i||4===i||5===i||7===i,this.isScript=10===this.familyClass,this.flags=0,this.post.isFixedPitch&&(this.flags|=1),this.isSerif&&(this.flags|=2),this.isScript&&(this.flags|=8),0!==this.italicAngle&&(this.flags|=64),this.flags|=32,!this.cmap.unicode)throw new Error("No unicode cmap for font")},t.prototype.characterToGlyph=function(t){var e;return(null!=(e=this.cmap.unicode)?e.codeMap[t]:void 0)||0},t.prototype.widthOfGlyph=function(t){var e;return e=1e3/this.head.unitsPerEm,this.hmtx.forGlyph(t).advance*e},t.prototype.widthOfString=function(t,e,r){var n,i,a,o;for(a=0,i=0,o=(t=""+t).length;0<=o?i<o:i>o;i=0<=o?++i:--i)n=t.charCodeAt(i),a+=this.widthOfGlyph(this.characterToGlyph(n))+r*(1e3/e)||0;return a*(e/1e3)},t.prototype.lineHeight=function(t,e){var r;return null==e&&(e=!1),r=e?this.lineGap:0,(this.ascender+r-this.decender)/1e3*t},t}();var Re,Te=function(){function t(t){this.data=null!=t?t:[],this.pos=0,this.length=this.data.length}return t.prototype.readByte=function(){return this.data[this.pos++]},t.prototype.writeByte=function(t){return this.data[this.pos++]=t},t.prototype.readUInt32=function(){return 16777216*this.readByte()+(this.readByte()<<16)+(this.readByte()<<8)+this.readByte()},t.prototype.writeUInt32=function(t){return this.writeByte(t>>>24&255),this.writeByte(t>>16&255),this.writeByte(t>>8&255),this.writeByte(255&t)},t.prototype.readInt32=function(){var t;return(t=this.readUInt32())>=2147483648?t-4294967296:t},t.prototype.writeInt32=function(t){return t<0&&(t+=4294967296),this.writeUInt32(t)},t.prototype.readUInt16=function(){return this.readByte()<<8|this.readByte()},t.prototype.writeUInt16=function(t){return this.writeByte(t>>8&255),this.writeByte(255&t)},t.prototype.readInt16=function(){var t;return(t=this.readUInt16())>=32768?t-65536:t},t.prototype.writeInt16=function(t){return t<0&&(t+=65536),this.writeUInt16(t)},t.prototype.readString=function(t){var e,r;for(r=[],e=0;0<=t?e<t:e>t;e=0<=t?++e:--e)r[e]=String.fromCharCode(this.readByte());return r.join("")},t.prototype.writeString=function(t){var e,r,n;for(n=[],e=0,r=t.length;0<=r?e<r:e>r;e=0<=r?++e:--e)n.push(this.writeByte(t.charCodeAt(e)));return n},t.prototype.readShort=function(){return this.readInt16()},t.prototype.writeShort=function(t){return this.writeInt16(t)},t.prototype.readLongLong=function(){var t,e,r,n,i,a,o,s;return t=this.readByte(),e=this.readByte(),r=this.readByte(),n=this.readByte(),i=this.readByte(),a=this.readByte(),o=this.readByte(),s=this.readByte(),128&t?-1*(72057594037927940*(255^t)+281474976710656*(255^e)+1099511627776*(255^r)+4294967296*(255^n)+16777216*(255^i)+65536*(255^a)+256*(255^o)+(255^s)+1):72057594037927940*t+281474976710656*e+1099511627776*r+4294967296*n+16777216*i+65536*a+256*o+s},t.prototype.writeLongLong=function(t){var e,r;return e=Math.floor(t/4294967296),r=4294967295&t,this.writeByte(e>>24&255),this.writeByte(e>>16&255),this.writeByte(e>>8&255),this.writeByte(255&e),this.writeByte(r>>24&255),this.writeByte(r>>16&255),this.writeByte(r>>8&255),this.writeByte(255&r)},t.prototype.readInt=function(){return this.readInt32()},t.prototype.writeInt=function(t){return this.writeInt32(t)},t.prototype.read=function(t){var e,r;for(e=[],r=0;0<=t?r<t:r>t;r=0<=t?++r:--r)e.push(this.readByte());return e},t.prototype.write=function(t){var e,r,n,i;for(i=[],r=0,n=t.length;r<n;r++)e=t[r],i.push(this.writeByte(e));return i},t}(),Ue=function(){var t;function e(t){var e,r,n;for(this.scalarType=t.readInt(),this.tableCount=t.readShort(),this.searchRange=t.readShort(),this.entrySelector=t.readShort(),this.rangeShift=t.readShort(),this.tables={},r=0,n=this.tableCount;0<=n?r<n:r>n;r=0<=n?++r:--r)e={tag:t.readString(4),checksum:t.readInt(),offset:t.readInt(),length:t.readInt()},this.tables[e.tag]=e}return e.prototype.encode=function(e){var r,n,i,a,o,s,c,u,l,h,f,d,p;for(p in f=Object.keys(e).length,s=Math.log(2),l=16*Math.floor(Math.log(f)/s),a=Math.floor(l/s),u=16*f-l,(n=new Te).writeInt(this.scalarType),n.writeShort(f),n.writeShort(l),n.writeShort(a),n.writeShort(u),i=16*f,c=n.pos+i,o=null,d=[],e)for(h=e[p],n.writeString(p),n.writeInt(t(h)),n.writeInt(c),n.writeInt(h.length),d=d.concat(h),"head"===p&&(o=c),c+=h.length;c%4;)d.push(0),c++;return n.write(d),r=2981146554-t(n.data),n.pos=o+8,n.writeUInt32(r),n.data},t=function(t){var e,r,n,i;for(t=tr.call(t);t.length%4;)t.push(0);for(n=new Te(t),r=0,e=0,i=t.length;e<i;e=e+=4)r+=n.readUInt32();return 4294967295&r},e}(),ze={}.hasOwnProperty,He=function(t,e){for(var r in e)ze.call(e,r)&&(t[r]=e[r]);function n(){this.constructor=t}return n.prototype=e.prototype,t.prototype=new n,t.__super__=e.prototype,t},We=function(t){function e(){return e.__super__.constructor.apply(this,arguments)}return He(e,t),e.prototype.tag="head",e.prototype.parse=function(t){return t.pos=this.offset,this.version=t.readInt(),this.revision=t.readInt(),this.checkSumAdjustment=t.readInt(),this.magicNumber=t.readInt(),this.flags=t.readShort(),this.unitsPerEm=t.readShort(),this.created=t.readLongLong(),this.modified=t.readLongLong(),this.xMin=t.readShort(),this.yMin=t.readShort(),this.xMax=t.readShort(),this.yMax=t.readShort(),this.macStyle=t.readShort(),this.lowestRecPPEM=t.readShort(),this.fontDirectionHint=t.readShort(),this.indexToLocFormat=t.readShort(),this.glyphDataFormat=t.readShort()},e.prototype.encode=function(t){var e;return(e=new Te).writeInt(this.version),e.writeInt(this.revision),e.writeInt(this.checkSumAdjustment),e.writeInt(this.magicNumber),e.writeShort(this.flags),e.writeShort(this.unitsPerEm),e.writeLongLong(this.created),e.writeLongLong(this.modified),e.writeShort(this.xMin),e.writeShort(this.yMin),e.writeShort(this.xMax),e.writeShort(this.yMax),e.writeShort(this.macStyle),e.writeShort(this.lowestRecPPEM),e.writeShort(this.fontDirectionHint),e.writeShort(t),e.writeShort(this.glyphDataFormat),e.data},e}(Re=function(){function t(t){var e;this.file=t,e=this.file.directory.tables[this.tag],this.exists=!!e,e&&(this.offset=e.offset,this.length=e.length,this.parse(this.file.contents))}return t.prototype.parse=function(){},t.prototype.encode=function(){},t.prototype.raw=function(){return this.exists?(this.file.contents.pos=this.offset,this.file.contents.read(this.length)):null},t}()),Ve=function(){function t(t,e){var r,n,i,a,o,s,c,u,l,h,f,d,p,g,m,v,b;switch(this.platformID=t.readUInt16(),this.encodingID=t.readShort(),this.offset=e+t.readInt(),l=t.pos,t.pos=this.offset,this.format=t.readUInt16(),this.length=t.readUInt16(),this.language=t.readUInt16(),this.isUnicode=3===this.platformID&&1===this.encodingID&&4===this.format||0===this.platformID&&4===this.format,this.codeMap={},this.format){case 0:for(s=0;s<256;++s)this.codeMap[s]=t.readByte();break;case 4:for(f=t.readUInt16(),h=f/2,t.pos+=6,i=function(){var e,r;for(r=[],s=e=0;0<=h?e<h:e>h;s=0<=h?++e:--e)r.push(t.readUInt16());return r}(),t.pos+=2,p=function(){var e,r;for(r=[],s=e=0;0<=h?e<h:e>h;s=0<=h?++e:--e)r.push(t.readUInt16());return r}(),c=function(){var e,r;for(r=[],s=e=0;0<=h?e<h:e>h;s=0<=h?++e:--e)r.push(t.readUInt16());return r}(),u=function(){var e,r;for(r=[],s=e=0;0<=h?e<h:e>h;s=0<=h?++e:--e)r.push(t.readUInt16());return r}(),n=(this.length-t.pos+this.offset)/2,o=function(){var e,r;for(r=[],s=e=0;0<=n?e<n:e>n;s=0<=n?++e:--e)r.push(t.readUInt16());return r}(),s=m=0,b=i.length;m<b;s=++m)for(g=i[s],r=v=d=p[s];d<=g?v<=g:v>=g;r=d<=g?++v:--v)0===u[s]?a=r+c[s]:0!==(a=o[u[s]/2+(r-d)-(h-s)]||0)&&(a+=c[s]),this.codeMap[r]=65535&a}t.pos=l}return t.encode=function(t,e){var r,n,i,a,o,s,c,u,l,h,f,d,p,g,m,v,b,y,w,N,L,A,x,S,_,P,k,F,I,C,j,O,B,M,E,q,D,R,T,U,z,H,W,V,G,Y;switch(F=new Te,a=Object.keys(t).sort((function(t,e){return t-e})),e){case"macroman":for(p=0,g=function(){var t=[];for(d=0;d<256;++d)t.push(0);return t}(),v={0:0},i={},I=0,B=a.length;I<B;I++)null==v[W=t[n=a[I]]]&&(v[W]=++p),i[n]={old:t[n],new:v[t[n]]},g[n]=v[t[n]];return F.writeUInt16(1),F.writeUInt16(0),F.writeUInt32(12),F.writeUInt16(0),F.writeUInt16(262),F.writeUInt16(0),F.write(g),{charMap:i,subtable:F.data,maxGlyphID:p+1};case"unicode":for(P=[],l=[],b=0,v={},r={},m=c=null,C=0,M=a.length;C<M;C++)null==v[w=t[n=a[C]]]&&(v[w]=++b),r[n]={old:w,new:v[w]},o=v[w]-n,null!=m&&o===c||(m&&l.push(m),P.push(n),c=o),m=n;for(m&&l.push(m),l.push(65535),P.push(65535),S=2*(x=P.length),A=2*Math.pow(Math.log(x)/Math.LN2,2),h=Math.log(A/2)/Math.LN2,L=2*x-A,s=[],N=[],f=[],d=j=0,E=P.length;j<E;d=++j){if(_=P[d],u=l[d],65535===_){s.push(0),N.push(0);break}if(_-(k=r[_].new)>=32768)for(s.push(0),N.push(2*(f.length+x-d)),n=O=_;_<=u?O<=u:O>=u;n=_<=u?++O:--O)f.push(r[n].new);else s.push(k-_),N.push(0)}for(F.writeUInt16(3),F.writeUInt16(1),F.writeUInt32(12),F.writeUInt16(4),F.writeUInt16(16+8*x+2*f.length),F.writeUInt16(0),F.writeUInt16(S),F.writeUInt16(A),F.writeUInt16(h),F.writeUInt16(L),z=0,q=l.length;z<q;z++)n=l[z],F.writeUInt16(n);for(F.writeUInt16(0),H=0,D=P.length;H<D;H++)n=P[H],F.writeUInt16(n);for(V=0,R=s.length;V<R;V++)o=s[V],F.writeUInt16(o);for(G=0,T=N.length;G<T;G++)y=N[G],F.writeUInt16(y);for(Y=0,U=f.length;Y<U;Y++)p=f[Y],F.writeUInt16(p);return{charMap:r,subtable:F.data,maxGlyphID:b+1}}},t}(),Ge=function(t){function e(){return e.__super__.constructor.apply(this,arguments)}return He(e,t),e.prototype.tag="cmap",e.prototype.parse=function(t){var e,r,n;for(t.pos=this.offset,this.version=t.readUInt16(),n=t.readUInt16(),this.tables=[],this.unicode=null,r=0;0<=n?r<n:r>n;r=0<=n?++r:--r)e=new Ve(t,this.offset),this.tables.push(e),e.isUnicode&&null==this.unicode&&(this.unicode=e);return!0},e.encode=function(t,e){var r,n;return null==e&&(e="macroman"),r=Ve.encode(t,e),(n=new Te).writeUInt16(0),n.writeUInt16(1),r.table=n.data.concat(r.subtable),r},e}(Re),Ye=function(t){function e(){return e.__super__.constructor.apply(this,arguments)}return He(e,t),e.prototype.tag="hhea",e.prototype.parse=function(t){return t.pos=this.offset,this.version=t.readInt(),this.ascender=t.readShort(),this.decender=t.readShort(),this.lineGap=t.readShort(),this.advanceWidthMax=t.readShort(),this.minLeftSideBearing=t.readShort(),this.minRightSideBearing=t.readShort(),this.xMaxExtent=t.readShort(),this.caretSlopeRise=t.readShort(),this.caretSlopeRun=t.readShort(),this.caretOffset=t.readShort(),t.pos+=8,this.metricDataFormat=t.readShort(),this.numberOfMetrics=t.readUInt16()},e}(Re),Je=function(t){function e(){return e.__super__.constructor.apply(this,arguments)}return He(e,t),e.prototype.tag="OS/2",e.prototype.parse=function(t){if(t.pos=this.offset,this.version=t.readUInt16(),this.averageCharWidth=t.readShort(),this.weightClass=t.readUInt16(),this.widthClass=t.readUInt16(),this.type=t.readShort(),this.ySubscriptXSize=t.readShort(),this.ySubscriptYSize=t.readShort(),this.ySubscriptXOffset=t.readShort(),this.ySubscriptYOffset=t.readShort(),this.ySuperscriptXSize=t.readShort(),this.ySuperscriptYSize=t.readShort(),this.ySuperscriptXOffset=t.readShort(),this.ySuperscriptYOffset=t.readShort(),this.yStrikeoutSize=t.readShort(),this.yStrikeoutPosition=t.readShort(),this.familyClass=t.readShort(),this.panose=function(){var e,r;for(r=[],e=0;e<10;++e)r.push(t.readByte());return r}(),this.charRange=function(){var e,r;for(r=[],e=0;e<4;++e)r.push(t.readInt());return r}(),this.vendorID=t.readString(4),this.selection=t.readShort(),this.firstCharIndex=t.readShort(),this.lastCharIndex=t.readShort(),this.version>0&&(this.ascent=t.readShort(),this.descent=t.readShort(),this.lineGap=t.readShort(),this.winAscent=t.readShort(),this.winDescent=t.readShort(),this.codePageRange=function(){var e,r;for(r=[],e=0;e<2;e=++e)r.push(t.readInt());return r}(),this.version>1))return this.xHeight=t.readShort(),this.capHeight=t.readShort(),this.defaultChar=t.readShort(),this.breakChar=t.readShort(),this.maxContext=t.readShort()},e}(Re),Xe=function(t){function e(){return e.__super__.constructor.apply(this,arguments)}return He(e,t),e.prototype.tag="post",e.prototype.parse=function(t){var e,r,n;switch(t.pos=this.offset,this.format=t.readInt(),this.italicAngle=t.readInt(),this.underlinePosition=t.readShort(),this.underlineThickness=t.readShort(),this.isFixedPitch=t.readInt(),this.minMemType42=t.readInt(),this.maxMemType42=t.readInt(),this.minMemType1=t.readInt(),this.maxMemType1=t.readInt(),this.format){case 65536:break;case 131072:var i;for(r=t.readUInt16(),this.glyphNameIndex=[],i=0;0<=r?i<r:i>r;i=0<=r?++i:--i)this.glyphNameIndex.push(t.readUInt16());for(this.names=[],n=[];t.pos<this.offset+this.length;)e=t.readByte(),n.push(this.names.push(t.readString(e)));return n;case 151552:return r=t.readUInt16(),this.offsets=t.read(r);case 196608:break;case 262144:return this.map=function(){var e,r,n;for(n=[],i=e=0,r=this.file.maxp.numGlyphs;0<=r?e<r:e>r;i=0<=r?++e:--e)n.push(t.readUInt32());return n}.call(this)}},e}(Re),Ke=function(t,e){this.raw=t,this.length=t.length,this.platformID=e.platformID,this.encodingID=e.encodingID,this.languageID=e.languageID},Ze=function(t){function e(){return e.__super__.constructor.apply(this,arguments)}return He(e,t),e.prototype.tag="name",e.prototype.parse=function(t){var e,r,n,i,a,o,s,c,u,l,h;for(t.pos=this.offset,t.readShort(),e=t.readShort(),o=t.readShort(),r=[],i=0;0<=e?i<e:i>e;i=0<=e?++i:--i)r.push({platformID:t.readShort(),encodingID:t.readShort(),languageID:t.readShort(),nameID:t.readShort(),length:t.readShort(),offset:this.offset+o+t.readShort()});for(s={},i=u=0,l=r.length;u<l;i=++u)n=r[i],t.pos=n.offset,c=t.readString(n.length),a=new Ke(c,n),null==s[h=n.nameID]&&(s[h]=[]),s[n.nameID].push(a);this.strings=s,this.copyright=s[0],this.fontFamily=s[1],this.fontSubfamily=s[2],this.uniqueSubfamily=s[3],this.fontName=s[4],this.version=s[5];try{this.postscriptName=s[6][0].raw.replace(/[\x00-\x19\x80-\xff]/g,"")}catch(t){this.postscriptName=s[4][0].raw.replace(/[\x00-\x19\x80-\xff]/g,"")}return this.trademark=s[7],this.manufacturer=s[8],this.designer=s[9],this.description=s[10],this.vendorUrl=s[11],this.designerUrl=s[12],this.license=s[13],this.licenseUrl=s[14],this.preferredFamily=s[15],this.preferredSubfamily=s[17],this.compatibleFull=s[18],this.sampleText=s[19]},e}(Re),$e=function(t){function e(){return e.__super__.constructor.apply(this,arguments)}return He(e,t),e.prototype.tag="maxp",e.prototype.parse=function(t){return t.pos=this.offset,this.version=t.readInt(),this.numGlyphs=t.readUInt16(),this.maxPoints=t.readUInt16(),this.maxContours=t.readUInt16(),this.maxCompositePoints=t.readUInt16(),this.maxComponentContours=t.readUInt16(),this.maxZones=t.readUInt16(),this.maxTwilightPoints=t.readUInt16(),this.maxStorage=t.readUInt16(),this.maxFunctionDefs=t.readUInt16(),this.maxInstructionDefs=t.readUInt16(),this.maxStackElements=t.readUInt16(),this.maxSizeOfInstructions=t.readUInt16(),this.maxComponentElements=t.readUInt16(),this.maxComponentDepth=t.readUInt16()},e}(Re),Qe=function(t){function e(){return e.__super__.constructor.apply(this,arguments)}return He(e,t),e.prototype.tag="hmtx",e.prototype.parse=function(t){var e,r,n,i,a,o,s;for(t.pos=this.offset,this.metrics=[],e=0,o=this.file.hhea.numberOfMetrics;0<=o?e<o:e>o;e=0<=o?++e:--e)this.metrics.push({advance:t.readUInt16(),lsb:t.readInt16()});for(n=this.file.maxp.numGlyphs-this.file.hhea.numberOfMetrics,this.leftSideBearings=function(){var r,i;for(i=[],e=r=0;0<=n?r<n:r>n;e=0<=n?++r:--r)i.push(t.readInt16());return i}(),this.widths=function(){var t,e,r,n;for(n=[],t=0,e=(r=this.metrics).length;t<e;t++)i=r[t],n.push(i.advance);return n}.call(this),r=this.widths[this.widths.length-1],s=[],e=a=0;0<=n?a<n:a>n;e=0<=n?++a:--a)s.push(this.widths.push(r));return s},e.prototype.forGlyph=function(t){return t in this.metrics?this.metrics[t]:{advance:this.metrics[this.metrics.length-1].advance,lsb:this.leftSideBearings[t-this.metrics.length]}},e}(Re),tr=[].slice,er=function(t){function e(){return e.__super__.constructor.apply(this,arguments)}return He(e,t),e.prototype.tag="glyf",e.prototype.parse=function(){return this.cache={}},e.prototype.glyphFor=function(t){var e,r,n,i,a,o,s,c,u,l;return t in this.cache?this.cache[t]:(i=this.file.loca,e=this.file.contents,r=i.indexOf(t),0===(n=i.lengthOf(t))?this.cache[t]=null:(e.pos=this.offset+r,a=(o=new Te(e.read(n))).readShort(),c=o.readShort(),l=o.readShort(),s=o.readShort(),u=o.readShort(),this.cache[t]=-1===a?new nr(o,c,l,s,u):new rr(o,a,c,l,s,u),this.cache[t]))},e.prototype.encode=function(t,e,r){var n,i,a,o,s;for(a=[],i=[],o=0,s=e.length;o<s;o++)n=t[e[o]],i.push(a.length),n&&(a=a.concat(n.encode(r)));return i.push(a.length),{table:a,offsets:i}},e}(Re),rr=function(){function t(t,e,r,n,i,a){this.raw=t,this.numberOfContours=e,this.xMin=r,this.yMin=n,this.xMax=i,this.yMax=a,this.compound=!1}return t.prototype.encode=function(){return this.raw.data},t}(),nr=function(){function t(t,e,r,n,i){var a,o;for(this.raw=t,this.xMin=e,this.yMin=r,this.xMax=n,this.yMax=i,this.compound=!0,this.glyphIDs=[],this.glyphOffsets=[],a=this.raw;o=a.readShort(),this.glyphOffsets.push(a.pos),this.glyphIDs.push(a.readUInt16()),32&o;)a.pos+=1&o?4:2,128&o?a.pos+=8:64&o?a.pos+=4:8&o&&(a.pos+=2)}return 1,8,32,64,128,t.prototype.encode=function(){var t,e,r;for(e=new Te(tr.call(this.raw.data)),t=0,r=this.glyphIDs.length;t<r;++t)e.pos=this.glyphOffsets[t];return e.data},t}(),ir=function(t){function e(){return e.__super__.constructor.apply(this,arguments)}return He(e,t),e.prototype.tag="loca",e.prototype.parse=function(t){var e,r;return t.pos=this.offset,e=this.file.head.indexToLocFormat,this.offsets=0===e?function(){var e,n;for(n=[],r=0,e=this.length;r<e;r+=2)n.push(2*t.readUInt16());return n}.call(this):function(){var e,n;for(n=[],r=0,e=this.length;r<e;r+=4)n.push(t.readUInt32());return n}.call(this)},e.prototype.indexOf=function(t){return this.offsets[t]},e.prototype.lengthOf=function(t){return this.offsets[t+1]-this.offsets[t]},e.prototype.encode=function(t,e){for(var r=new Uint32Array(this.offsets.length),n=0,i=0,a=0;a<r.length;++a)if(r[a]=n,i<e.length&&e[i]==a){++i,r[a]=n;var o=this.offsets[a],s=this.offsets[a+1]-o;s>0&&(n+=s)}for(var c=new Array(4*r.length),u=0;u<r.length;++u)c[4*u+3]=255&r[u],c[4*u+2]=(65280&r[u])>>8,c[4*u+1]=(16711680&r[u])>>16,c[4*u]=(4278190080&r[u])>>24;return c},e}(Re),ar=function(){function t(t){this.font=t,this.subset={},this.unicodes={},this.next=33}return t.prototype.generateCmap=function(){var t,e,r,n,i;for(e in n=this.font.cmap.tables[0].codeMap,t={},i=this.subset)r=i[e],t[e]=n[r];return t},t.prototype.glyphsFor=function(t){var e,r,n,i,a,o,s;for(n={},a=0,o=t.length;a<o;a++)n[i=t[a]]=this.font.glyf.glyphFor(i);for(i in e=[],n)(null!=(r=n[i])?r.compound:void 0)&&e.push.apply(e,r.glyphIDs);if(e.length>0)for(i in s=this.glyphsFor(e))r=s[i],n[i]=r;return n},t.prototype.encode=function(t,e){var r,n,i,a,o,s,c,u,l,h,f,d,p,g,m;for(n in r=Ge.encode(this.generateCmap(),"unicode"),a=this.glyphsFor(t),f={0:0},m=r.charMap)f[(s=m[n]).old]=s.new;for(d in h=r.maxGlyphID,a)d in f||(f[d]=h++);return u=function(t){var e,r;for(e in r={},t)r[t[e]]=e;return r}(f),l=Object.keys(u).sort((function(t,e){return t-e})),p=function(){var t,e,r;for(r=[],t=0,e=l.length;t<e;t++)o=l[t],r.push(u[o]);return r}(),i=this.font.glyf.encode(a,p,f),c=this.font.loca.encode(i.offsets,p),g={cmap:this.font.cmap.raw(),glyf:i.table,loca:c,hmtx:this.font.hmtx.raw(),hhea:this.font.hhea.raw(),maxp:this.font.maxp.raw(),post:this.font.post.raw(),name:this.font.name.raw(),head:this.font.head.encode(e)},this.font.os2.exists&&(g["OS/2"]=this.font.os2.raw()),this.font.directory.encode(g)},t}();M.API.PDFObject=function(){var t;function e(){}return t=function(t,e){return(Array(e+1).join("0")+t).slice(-e)},e.convert=function(r){var n,i,a,o;if(Array.isArray(r))return"["+function(){var t,i,a;for(a=[],t=0,i=r.length;t<i;t++)n=r[t],a.push(e.convert(n));return a}().join(" ")+"]";if("string"==typeof r)return"/"+r;if(null!=r?r.isString:void 0)return"("+r+")";if(r instanceof Date)return"(D:"+t(r.getUTCFullYear(),4)+t(r.getUTCMonth(),2)+t(r.getUTCDate(),2)+t(r.getUTCHours(),2)+t(r.getUTCMinutes(),2)+t(r.getUTCSeconds(),2)+"Z)";if("[object Object]"==={}.toString.call(r)){for(i in a=["<<"],r)o=r[i],a.push("/"+i+" "+e.convert(o));return a.push(">>"),a.join("\n")}return""+r},e}(),t.AcroForm=xt,t.AcroFormAppearance=Lt,t.AcroFormButton=gt,t.AcroFormCheckBox=yt,t.AcroFormChoiceField=ht,t.AcroFormComboBox=dt,t.AcroFormEditBox=pt,t.AcroFormListBox=ft,t.AcroFormPasswordField=Nt,t.AcroFormPushButton=mt,t.AcroFormRadioButton=vt,t.AcroFormTextField=wt,t.GState=C,t.ShadingPattern=O,t.TilingPattern=B,t.default=M,t.jsPDF=M,Object.defineProperty(t,"__esModule",{value:!0})}));
 //# sourceMappingURL=jspdf.umd.min.js.map
+
+</script>
+<script>
+/* ===== 図面（DXF）から機器を取込む =====
+   メーカー外形図のDXFを読み → 平面・正面・側面の範囲を指でなぞって指定 → 三面の外形（シルエット）を重ねて立体にする（三角法の逆＝ビジュアルハル）。
+   フランジ（ボルト孔が円周に並ぶ円）を自動で探して、接続口（口径はJIS 10K のボルト中心円径から）にする。
+   DXFは 1単位＝1mm（実寸）で描かれている前提。違うときは「図の寸法」を入れて合わせる。 */
+(function(){
+const PCD10K={15:70,20:75,25:90,32:100,40:105,50:120,65:140,80:150,100:175,125:210,150:240,200:290,250:355,300:400,350:445,400:510}; // JIS B 2220 10K ボルト中心円径
+const BOLTN={15:4,20:4,25:4,32:4,40:4,50:4,65:4,80:8,100:8,125:8,150:8,200:12,250:12,300:16,350:16,400:16};
+// ---------- DXF 読み ----------
+function decode(buf){const head=new TextDecoder("latin1").decode(buf.slice(0,60000));const m=/\$DWGCODEPAGE\s*\r?\n\s*3\s*\r?\n\s*(\S+)/.exec(head);const cp=m?m[1].toUpperCase():"";
+  const ver=(/\$ACADVER\s*\r?\n\s*1\s*\r?\n\s*(\S+)/.exec(head)||[])[1]||"";const old=ver&&ver<"AC1021";
+  try{return new TextDecoder(old&&/932|DOS932/.test(cp)?"shift_jis":"utf-8").decode(buf);}catch(_){return new TextDecoder("utf-8").decode(buf);}}
+function pairs(txt){const L=txt.split(/\r?\n/),P=[];for(let i=0;i+1<L.length;i+=2)P.push([parseInt(L[i],10),L[i+1].trim()]);return P;}
+function parseDXF(txt){const P=pairs(txt),blocks={},layers={},ents=[];let i=0,sec="";
+  const readEnt=()=>{const e={t:P[i][1],g:[]};i++;while(i<P.length&&P[i][0]!==0){e.g.push(P[i]);i++;}return e;};
+  while(i<P.length){const [c,v]=P[i];
+    if(c===0&&v==="SECTION"){sec=(P[i+1]||[])[1]||"";i+=2;continue;}
+    if(c===0&&v==="ENDSEC"){sec="";i++;continue;}
+    if(sec==="TABLES"&&c===0&&v==="LAYER"){const e=readEnt();const nm=(e.g.find(p=>p[0]===2)||[])[1],lt=(e.g.find(p=>p[0]===6)||[])[1]||"CONTINUOUS";if(nm)layers[nm]={lt};continue;}
+    if(sec==="BLOCKS"&&c===0&&v==="BLOCK"){const e=readEnt();const nm=(e.g.find(p=>p[0]===2)||[])[1],bx=+((e.g.find(p=>p[0]===10)||[])[1]||0),by=+((e.g.find(p=>p[0]===20)||[])[1]||0);const list=[];
+      while(i<P.length&&!(P[i][0]===0&&P[i][1]==="ENDBLK")){if(P[i][0]===0)list.push(readEnt());else i++;}
+      blocks[nm]={bx,by,list};continue;}
+    if(sec==="ENTITIES"&&c===0){ents.push(readEnt());continue;}
+    i++;}
+  return {blocks,layers,ents};}
+const G1=(e,c,d)=>{const p=e.g.find(q=>q[0]===c);return p?p[1]:d;},GN=(e,c,d)=>{const p=e.g.find(q=>q[0]===c);return p?+p[1]:d;};
+// 線分・円にばらす（ブロックは展開、ペーパー空間・寸法は捨てる）
+function explode(D){const segs=[],circ=[];let n=0;
+  const ltOf=(e,inh)=>{let lt=(G1(e,6,"BYLAYER")||"").toUpperCase();if(lt==="BYLAYER"){const L=D.layers[G1(e,8,"0")];lt=(L?L.lt:"CONTINUOUS").toUpperCase();}if(lt==="BYBLOCK")lt=inh||"CONTINUOUS";return lt;};
+  const cont=lt=>/^(CONTINUOUS|BYLAYER|BYBLOCK|実線|)$/.test(lt);
+  function walk(list,T,inh,depth){
+    for(let k=0;k<list.length;k++){const e=list[k];if(GN(e,67,0)===1)continue;const lt=ltOf(e,inh),solid=cont(lt);const fx=GN(e,230,1)<0?-1:1;
+      const cl=/CENTER|DASHDOT|PHANTOM|CHAIN|DIVIDE|一点|二点|中心/.test(lt);
+      const add=(x1,y1,x2,y2)=>{const a=T(fx*x1,y1),b=T(fx*x2,y2);segs.push([a[0],a[1],b[0],b[1],solid,cl]);};
+      const arc=(cx,cy,r,a0,a1)=>{if(a1<a0)a1+=360;const st=Math.max(2,Math.ceil((a1-a0)/10));let px=cx+r*Math.cos(a0*Math.PI/180),py=cy+r*Math.sin(a0*Math.PI/180);
+        for(let s=1;s<=st;s++){const a=(a0+(a1-a0)*s/st)*Math.PI/180,qx=cx+r*Math.cos(a),qy=cy+r*Math.sin(a);add(px,py,qx,qy);px=qx;py=qy;}};
+      const bulgeTo=(x1,y1,x2,y2,b)=>{if(!b){add(x1,y1,x2,y2);return;}const th=4*Math.atan(b),dx=x2-x1,dy=y2-y1,c=Math.hypot(dx,dy);if(c<1e-9)return;const r=c/(2*Math.sin(th/2)),mx=(x1+x2)/2,my=(y1+y2)/2,h=r*Math.cos(th/2);
+        const cx=mx-dy/c*h,cy=my+dx/c*h;let a0=Math.atan2(y1-cy,x1-cx)*180/Math.PI,a1=Math.atan2(y2-cy,x2-cx)*180/Math.PI;if(b<0){const t=a0;a0=a1;a1=t;}arc(cx,cy,Math.abs(r),a0,a1);};
+      const t=e.t;
+      if(t==="LINE")add(GN(e,10,0),GN(e,20,0),GN(e,11,0),GN(e,21,0));
+      else if(t==="CIRCLE"){const cx=GN(e,10,0),cy=GN(e,20,0),r=GN(e,40,0);arc(cx,cy,r,0,360);const c=T(fx*cx,cy),q=T(fx*cx+r,cy);circ.push([c[0],c[1],Math.hypot(q[0]-c[0],q[1]-c[1]),solid]);}
+      else if(t==="ARC"){const cx=GN(e,10,0),cy=GN(e,20,0),r=GN(e,40,0),a0=GN(e,50,0),a1=GN(e,51,360);arc(cx,cy,r,a0,a1);let sp=a1-a0;if(sp<0)sp+=360;if(sp>=150){const c=T(fx*cx,cy),q=T(fx*cx+r,cy);circ.push([c[0],c[1],Math.hypot(q[0]-c[0],q[1]-c[1]),solid,1]);}}
+      else if(t==="ELLIPSE"){const cx=GN(e,10,0),cy=GN(e,20,0),ax=GN(e,11,1),ay=GN(e,21,0),rt=GN(e,40,1),p0=GN(e,41,0),p1=GN(e,42,Math.PI*2);let e1=p1;if(e1<p0)e1+=Math.PI*2;const st=Math.max(8,Math.ceil((e1-p0)/0.15));
+        const pt=u=>[cx+ax*Math.cos(u)-ay*rt*Math.sin(u),cy+ay*Math.cos(u)+ax*rt*Math.sin(u)];let a=pt(p0);for(let s=1;s<=st;s++){const b=pt(p0+(e1-p0)*s/st);add(a[0],a[1],b[0],b[1]);a=b;}}
+      else if(t==="LWPOLYLINE"){const V=[];let cur=null;e.g.forEach(([c,v])=>{if(c===10){cur=[+v,0,0];V.push(cur);}else if(c===20&&cur)cur[1]=+v;else if(c===42&&cur)cur[2]=+v;});const cl=GN(e,70,0)&1;
+        for(let s=0;s+1<V.length+(cl?1:0);s++){const a=V[s],b=V[(s+1)%V.length];bulgeTo(a[0],a[1],b[0],b[1],a[2]);}}
+      else if(t==="POLYLINE"){const fl=GN(e,70,0);const V=[];let j=k+1;while(j<list.length&&list[j].t==="VERTEX"){const vf=GN(list[j],70,0);if(!(vf&128))V.push([GN(list[j],10,0),GN(list[j],20,0),GN(list[j],42,0)]);j++;}k=j;
+        if(!(fl&(16|64))){const cl=fl&1;for(let s=0;s+1<V.length+(cl?1:0);s++){const a=V[s],b=V[(s+1)%V.length];bulgeTo(a[0],a[1],b[0],b[1],a[2]);}}}
+      else if(t==="SPLINE"){const F=[],C=[];let cf=null,cc=null;e.g.forEach(([c,v])=>{if(c===11){cf=[+v,0];F.push(cf);}else if(c===21&&cf)cf[1]=+v;else if(c===10){cc=[+v,0];C.push(cc);}else if(c===20&&cc)cc[1]=+v;});const V=F.length>1?F:C;for(let s=0;s+1<V.length;s++)add(V[s][0],V[s][1],V[s+1][0],V[s+1][1]);}
+      else if(t==="SOLID"||t==="TRACE"){const q=[[GN(e,10,0),GN(e,20,0)],[GN(e,11,0),GN(e,21,0)],[GN(e,13,0),GN(e,23,0)],[GN(e,12,0),GN(e,22,0)]];for(let s=0;s<4;s++)add(q[s][0],q[s][1],q[(s+1)%4][0],q[(s+1)%4][1]);}
+      else if(t==="INSERT"&&depth<8){const nm=G1(e,2,"");if(/^\*D/i.test(nm))continue;const B=D.blocks[nm];if(!B)continue;const ix=GN(e,10,0),iy=GN(e,20,0),sx=GN(e,41,1),sy=GN(e,42,1),r=GN(e,50,0)*Math.PI/180,cs=Math.cos(r),sn=Math.sin(r);
+        const T2=(x,y)=>{const u=(x-B.bx)*sx,v=(y-B.by)*sy;return T(fx*(ix+u*cs-v*sn),iy+u*sn+v*cs);};walk(B.list,T2,lt,depth+1);}
+      if(++n>400000)return;}}
+  walk(D.ents,(x,y)=>[x,y],"",0);return {segs,circ};}
+// ---------- シルエット（外形の塗りつぶし） ----------
+function silhouette(segs,R,N){const w=R[2]-R[0],h=R[3]-R[1],cs=Math.max(w,h)/N,nx=Math.max(4,Math.ceil(w/cs)+4),ny=Math.max(4,Math.ceil(h/cs)+4),g=new Uint8Array(nx*ny);
+  const put=(x,y)=>{const i=Math.floor((x-R[0])/cs)+2,j=Math.floor((y-R[1])/cs)+2;if(i>=0&&j>=0&&i<nx&&j<ny)g[j*nx+i]=1;};
+  segs.forEach(s=>{if(s[5])return;const L=Math.hypot(s[2]-s[0],s[3]-s[1]),st=Math.max(1,Math.ceil(L/(cs*0.5)));for(let k=0;k<=st;k++)put(s[0]+(s[2]-s[0])*k/st,s[1]+(s[3]-s[1])*k/st);});
+  // 線の隙間を1マス埋める
+  const g2=g.slice();for(let j=1;j<ny-1;j++)for(let i=1;i<nx-1;i++)if(g[j*nx+i]){g2[j*nx+i-1]=g2[j*nx+i+1]=g2[(j-1)*nx+i]=g2[(j+1)*nx+i]=1;}
+  // 外から塗る → 外でない所が中身
+  const out=new Uint8Array(nx*ny),st=[0];out[0]=1;while(st.length){const p=st.pop(),i=p%nx,j=(p-i)/nx;[[1,0],[-1,0],[0,1],[0,-1]].forEach(([a,b])=>{const x=i+a,y=j+b;if(x<0||y<0||x>=nx||y>=ny)return;const q=y*nx+x;if(!out[q]&&!g2[q]){out[q]=1;st.push(q);}});}
+  let inn=new Uint8Array(nx*ny);for(let k=0;k<nx*ny;k++)inn[k]=out[k]?0:1;
+  // 中の一番広い区画（＝共通ベースの天板など）を抜いた形も作る：平面では、ベースより上はこっちを使う
+  const lab=new Int32Array(nx*ny).fill(-1),area=[];for(let q=0;q<nx*ny;q++){if(!inn[q]||g2[q]||lab[q]>=0)continue;let a=0;const s2=[q];lab[q]=area.length;
+    while(s2.length){const r=s2.pop();a++;const i=r%nx,j=(r-i)/nx;[[1,0],[-1,0],[0,1],[0,-1]].forEach(([u,v])=>{const x=i+u,y=j+v;if(x<0||y<0||x>=nx||y>=ny)return;const t=y*nx+x;if(inn[t]&&!g2[t]&&lab[t]<0){lab[t]=area.length;s2.push(t);}});}area.push(a);}
+  // 長方形の区画（部品の面）：線で囲まれた中がほぼ四角いもの
+  const rects=[];{const bb=area.map(()=>[1e9,1e9,-1,-1]);for(let q=0;q<nx*ny;q++){const k=lab[q];if(k<0)continue;const i=q%nx,j=(q-i)/nx,b=bb[k];if(i<b[0])b[0]=i;if(j<b[1])b[1]=j;if(i>b[2])b[2]=i;if(j>b[3])b[3]=j;}
+    bb.forEach((b,k)=>{if(area[k]<6)return;const r=area[k]/((b[2]-b[0]+1)*(b[3]-b[1]+1));if(r<0.86)return;rects.push([R[0]+(b[0]-3)*cs,R[1]+(b[1]-3)*cs,R[0]+(b[2]-1)*cs,R[1]+(b[3]-1)*cs]);});}
+  // 外周に接する区画＝ベース天板（外形線のすぐ内側）
+  const edge=new Uint8Array(area.length);for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const q=j*nx+i;if(lab[q]<0)continue;let e2=false;for(let b=-4;b<=4&&!e2;b++)for(let a=-4;a<=4;a++){const x=i+a,y=j+b;if(x<0||y<0||x>=nx||y>=ny||out[y*nx+x]){e2=true;break;}}if(e2)edge[lab[q]]=1;}
+  const tot=inn.reduce((s3,v)=>s3+v,0),eA=area.reduce((s3,a,k)=>s3+(edge[k]?a:0),0),isB=k=>k>=0&&edge[k]===1,big=-2;
+  let hi=new Uint8Array(nx*ny);if(eA>0.15*tot&&eA<0.92*tot){for(let q=0;q<nx*ny;q++)hi[q]=inn[q]&&!isB(lab[q])?1:0;
+    // ベース区画を抜いたあと、その縁の線（外周）だけ残るのを消す
+    for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const q=j*nx+i;if(hi[q]&&g2[q]){let nb=false;for(const [u,v] of [[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2]]){const x=i+u,y=j+v;if(x>=0&&y>=0&&x<nx&&y<ny&&lab[y*nx+x]>=0&&!isB(lab[y*nx+x])){nb=true;break;}}if(!nb)hi[q]=0;}}}
+  else hi=null;
+  // 引出線・寸法線などの細い「ヒゲ」を消す（縮めて戻す）
+  const morph=(src,er)=>{const d=new Uint8Array(nx*ny);for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){let v=er?1:0;for(let b=-1;b<=1&&(er?v:!v);b++)for(let a=-1;a<=1;a++){const x=i+a,y=j+b,o=(x<0||y<0||x>=nx||y>=ny)?0:src[y*nx+x];if(er&&!o){v=0;break;}if(!er&&o){v=1;break;}}d[j*nx+i]=v;}return d;};
+  inn=morph(morph(morph(morph(inn,1),1),0),0);if(hi)hi=morph(morph(hi,1),0);
+  // 有効範囲（中身のある外接）
+  let i0=nx,i1=-1,j0=ny,j1=-1;for(let j=0;j<ny;j++)for(let i=0;i<nx;i++)if(inn[j*nx+i]){if(i<i0)i0=i;if(i>i1)i1=i;if(j<j0)j0=j;if(j>j1)j1=j;}
+  if(i1<0)return null;return {g:inn,hi,rects,nx,ny,cs,R,i0,i1,j0,j1,x0:R[0]+(i0-2)*cs,x1:R[0]+(i1-1)*cs,y0:R[1]+(j0-2)*cs,y1:R[1]+(j1-1)*cs};}
+const sAt=(S,u,v,h)=>{ // u,v：0〜1（外接内の位置）／h＝ベースより上（ベース区画を抜いた形を使う）
+  const i=Math.min(S.i1,Math.max(S.i0,Math.floor(S.i0+u*(S.i1-S.i0+1)))),j=Math.min(S.j1,Math.max(S.j0,Math.floor(S.j0+v*(S.j1-S.j0+1))));return (h&&S.hi?S.hi:S.g)[j*S.nx+i];};
+// ---------- フランジ（ボルト孔）を探す ----------
+function findFlanges(circ,R){const C=circ.filter(c=>c[3]&&!c[4]&&c[0]>=R[0]&&c[0]<=R[2]&&c[1]>=R[1]&&c[1]<=R[3]),out=[];
+  const byR={};C.forEach(c=>{const k=Math.round(c[2]*2)/2;(byR[k]=byR[k]||[]).push(c);});
+  Object.entries(byR).forEach(([rk,hs])=>{if(+rk<4||+rk>20||hs.length<4)return;const used=new Set();
+    hs.forEach((a,ia)=>{if(used.has(ia))return;
+      // aと同じ円周に乗る仲間：重心からの距離がそろう組
+      const near=hs.map((b,ib)=>[ib,Math.hypot(b[0]-a[0],b[1]-a[1])]).filter(x=>x[1]<600&&!used.has(x[0])).sort((p,q)=>p[1]-q[1]);
+      for(const cnt of [16,12,8,4]){if(near.length<cnt)continue;const grp=near.slice(0,cnt).map(x=>hs[x[0]]);const cx=grp.reduce((s,c)=>s+c[0],0)/cnt,cy=grp.reduce((s,c)=>s+c[1],0)/cnt,ds=grp.map(c=>Math.hypot(c[0]-cx,c[1]-cy)),m=ds.reduce((s,d)=>s+d,0)/cnt;
+        if(m<20||ds.some(d=>Math.abs(d-m)>Math.max(1.5,m*0.03)))continue;
+        const pcd=m*2;let best=null;Object.entries(PCD10K).forEach(([a_,p])=>{const d=Math.abs(p-pcd);if(BOLTN[a_]===cnt&&(!best||d<best.d))best={a:+a_,d};});
+        if(!best||best.d>pcd*0.08)continue;near.slice(0,cnt).forEach(x=>used.add(x[0]));out.push({x:cx,y:cy,sz:best.a,pcd:Math.round(pcd),n:cnt});break;}});});
+  // 同じ所の二重検出を消す
+  return out.filter((f,i)=>!out.some((g,j)=>j<i&&Math.hypot(g.x-f.x,g.y-f.y)<10));}
+// ---------- 立体（三面の外形を重ねる）→ 箱の集まり ----------
+function carve(SP,SF,SS,W,D,H,sideLeft,N){const cs=Math.max(W,D,H)/N,nx=Math.max(1,Math.round(W/cs)),ny=Math.max(1,Math.round(D/cs)),nz=Math.max(1,Math.round(H/cs)),V=new Uint8Array(nx*ny*nz);
+  // ベース天端の高さ：正面（無ければ側面）の下から、横幅がガクッと減る所
+  let zb=0;const E=SF||SS;if(E&&SP&&SP.hi){const row=w=>{let c=0;for(let t=0;t<60;t++)c+=sAt(E,(t+0.5)/60,w);return c;};const b0=row(0.5/nz);for(let k=1;k<nz;k++){if(row((k+0.5)/nz)<b0*0.95){zb=k;break;}}if(zb>nz*0.4)zb=0;
+    // ベースの上で横幅が大きく減る（＝ベースの上に機器が載ってる）ときだけ、平面のベース区画を抜く。箱形の空調機などは使わない
+    if(zb){let sm=0,c=0;for(let k=zb;k<nz;k++){sm+=row((k+0.5)/nz);c++;}if(sm/c>b0*0.75)zb=0;}}
+  for(let k=0;k<nz;k++){const w=(k+0.5)/nz;for(let j=0;j<ny;j++){const v=(j+0.5)/ny;for(let i=0;i<nx;i++){const u=(i+0.5)/nx;
+    // 平面：上が奥（+y）／正面：左右がx・上下がz／側面（右側面）：左が手前
+    const p=SP?sAt(SP,u,v,zb&&k>=zb):1,f=SF?sAt(SF,u,w):1,s=SS?sAt(SS,sideLeft?1-v:v,w):1;if(p&&f&&s)V[(k*ny+j)*nx+i]=1;}}}
+  // 宙に浮いた塊は下へ伸ばす（メーカー図は側面などで部品を省いていることが多い。機器は浮かない）。伸ばすのは正面・平面で中身がある所だけ
+  const idx=(i,j,k)=>(k*ny+j)*nx+i,lab=new Int32Array(V.length).fill(-1);let nc=0;const ground=[];
+  for(let q=0;q<V.length;q++){if(!V[q]||lab[q]>=0)continue;const stk=[q];lab[q]=nc;let g=false;
+    while(stk.length){const r=stk.pop(),i=r%nx,j=((r-i)/nx)%ny,k=(r-i-j*nx)/(nx*ny);if(k===0)g=true;
+      [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(([a,b,c])=>{const x=i+a,y=j+b,z=k+c;if(x<0||y<0||z<0||x>=nx||y>=ny||z>=nz)return;const t=idx(x,y,z);if(V[t]&&lab[t]<0){lab[t]=nc;stk.push(t);}});}
+    ground.push(g);nc++;}
+  for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){let k=nz-1;while(k>=0){const q=idx(i,j,k);if(V[q]&&!ground[lab[q]]){let z=k-1;while(z>=0&&!V[idx(i,j,z)]){const u=(i+0.5)/nx,v=(j+0.5)/ny,w=(z+0.5)/nz;if(!((SP?sAt(SP,u,v):1)&&(SF?sAt(SF,u,w):1)))break;z--;}
+      if(z>=0&&V[idx(i,j,z)]||z<0){for(let y=k-1;y>z;y--)V[idx(i,j,y)]=1;}k=z;}else k--;}}
+  // 箱にまとめる（x方向の連続→y→z）
+  const used=new Uint8Array(V.length),bx=[];const at=(i,j,k)=>V[(k*ny+j)*nx+i]&&!used[(k*ny+j)*nx+i];
+  for(let k=0;k<nz;k++)for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){if(!at(i,j,k))continue;let i2=i;while(i2+1<nx&&at(i2+1,j,k))i2++;
+    let j2=j;const rowOk=(jj,kk)=>{for(let x=i;x<=i2;x++)if(!at(x,jj,kk))return false;return true;};while(j2+1<ny&&rowOk(j2+1,k))j2++;
+    let k2=k;const lay=kk=>{for(let y=j;y<=j2;y++)if(!rowOk(y,kk))return false;return true;};while(k2+1<nz&&lay(k2+1))k2++;
+    for(let z=k;z<=k2;z++)for(let y=j;y<=j2;y++)for(let x=i;x<=i2;x++)used[(z*ny+y)*nx+x]=1;
+    const X=a=>Math.round(a*W/nx-W/2),Y=a=>Math.round(a*D/ny-D/2),Z=a=>Math.round(a*H/nz);bx.push([X(i),Y(j),Z(k),X(i2+1),Y(j2+1),Z(k2+1)]);}
+  return {bx,V,nx,ny,nz};}
+// ---------- 画面 ----------
+const css=`#impW{position:fixed;inset:0;z-index:97;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:10px}#impW.show{display:flex}
+#impW .w{background:#1b1f25;color:#e6e6e6;border:1px solid #3b4250;border-radius:12px;width:min(1180px,100%);height:min(860px,96vh);display:flex;flex-direction:column}
+#impW .hd{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #333a45}#impW .hd b{margin-right:auto}
+#impW .bd{flex:1;display:flex;min-height:0}#impW .cv{flex:1;position:relative;background:#0e1116;touch-action:none}#impW canvas{position:absolute;inset:0;width:100%;height:100%}
+#impW .sd{width:300px;overflow:auto;padding:10px;border-left:1px solid #333a45;font-size:13px}#impW .sd h4{margin:10px 0 4px;color:#8fc1ff;font-size:13px}
+#impW button{background:#2a303a;color:#e6e6e6;border:1px solid #3b4250;border-radius:7px;padding:6px 10px;font-size:13px}#impW button.on{background:#2f6fd0;border-color:#2f6fd0}#impW button.go{background:#1f8a4c;border-color:#1f8a4c}
+#impW input{background:#11151a;color:#e6e6e6;border:1px solid #3b4250;border-radius:6px;padding:4px 6px;width:100%;box-sizing:border-box}#impW .vw{display:flex;gap:6px;margin:4px 0}#impW .vw button{flex:1}
+#impW table{width:100%;border-collapse:collapse}#impW td{padding:2px 3px;border-bottom:1px solid #2a303a}#impW .mut{color:#8b8b95;font-size:11.5px}`;
+const st=document.createElement("style");st.textContent=css;document.head.appendChild(st);
+const W=document.createElement("div");W.id="impW";W.innerHTML=`<div class="w"><div class="hd"><b>図面（DXF）から機器を作る</b><label style="cursor:pointer"><input type="file" id="impF" accept=".dxf,.DXF,.dwg,.DWG" style="display:none"><span style="background:#2f6fd0;padding:6px 10px;border-radius:7px">DXFを選ぶ</span></label><span id="impN" class="mut"></span><button id="impX">×</button></div>
+  <div class="bd"><div class="cv" id="impC"><canvas id="impCv"></canvas><div id="impHint" style="position:absolute;left:10px;top:8px;font-size:12.5px;color:#9cf;pointer-events:none">メーカー外形図のDXFを選んでな（DWGはTfas・AutoCADで「DXFで保存」してから）</div></div>
+  <div class="sd"><h4>① 三面の範囲を指定</h4><div class="mut">ボタンを押してから、図の上をドラッグで囲む（図面の枠・表は入れない）。2本指でズーム・移動。</div>
+    <div class="vw"><button data-v="P">平面</button><button data-v="F">正面</button><button data-v="S">側面</button></div>
+    <label style="display:flex;gap:6px;align-items:center;margin:4px 0"><input type="checkbox" id="impSL" style="width:auto">側面は「左側面」（左が奥）</label>
+    <h4>② 寸法（mm）</h4><div class="mut">外形の大きさ。図から自動で読む。違ってたら直す。</div>
+    <div style="display:flex;gap:6px"><div>幅 W<input id="impW_" type="number" inputmode="decimal"></div><div>奥行 D<input id="impD_" type="number" inputmode="decimal"></div><div>高さ H<input id="impH_" type="number" inputmode="decimal"></div></div>
+    <h4>③ 接続口（フランジを自動で探す）</h4><div id="impNz" class="mut">正面・側面・平面を囲むと、ボルト孔の並び（JIS 10K）から口径を出す</div>
+    <h4>④ 名前</h4><input id="impNm" placeholder="型式（例：KFE50A5.5）">
+    <label style="display:flex;gap:6px;align-items:center;margin-top:10px"><input type="checkbox" id="impPT" checked style="width:auto">部品ごとに起こす（試作：円→円柱・四角→箱。外したら外形の重ね合わせだけ）</label>
+    <div style="margin-top:8px;display:flex;gap:6px"><button id="impRun">立体を作る</button><button class="go" id="impGo" disabled>機器として使う</button></div>
+    <div id="impMsg" class="mut" style="margin-top:6px"></div><div id="impPv" style="margin-top:6px;background:#fff;border-radius:8px"></div></div></div></div>`;
+document.body.appendChild(W);
+let DX=null,VR={},mode=null,view={s:1,ox:0,oy:0},drag=null,NZ=[],RES=null;
+const cv=()=>$("impCv"),ctx=()=>cv().getContext("2d");
+const COLV={P:"#38d39f",F:"#ffb340",S:"#ff6ad5"},NMV={P:"平面",F:"正面",S:"側面"};
+function fit(){if(!DX||!DX.segs.length)return;const c=cv(),w=c.clientWidth,h=c.clientHeight;let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;DX.segs.forEach(s=>{x0=Math.min(x0,s[0],s[2]);x1=Math.max(x1,s[0],s[2]);y0=Math.min(y0,s[1],s[3]);y1=Math.max(y1,s[1],s[3]);});
+  view.s=Math.min((w-20)/Math.max(x1-x0,1),(h-20)/Math.max(y1-y0,1));view.ox=10-x0*view.s+(w-20-(x1-x0)*view.s)/2;view.oy=h-10+y0*view.s-(h-20-(y1-y0)*view.s)/2;}
+const toS=(x,y)=>[x*view.s+view.ox,-y*view.s+view.oy],toW=(X,Y)=>[(X-view.ox)/view.s,-(Y-view.oy)/view.s];
+function paint(){const c=cv(),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*d;c.height=h*d;const g=ctx();g.setTransform(d,0,0,d,0,0);g.fillStyle="#0e1116";g.fillRect(0,0,w,h);if(!DX)return;
+  g.lineWidth=0.7;g.beginPath();g.strokeStyle="#9fb3c8";DX.segs.forEach(s=>{if(!s[4])return;const a=toS(s[0],s[1]),b=toS(s[2],s[3]);g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);});g.stroke();
+  g.beginPath();g.strokeStyle="#c0392b";DX.segs.forEach(s=>{if(s[4])return;const a=toS(s[0],s[1]),b=toS(s[2],s[3]);g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);});g.stroke();
+  Object.entries(VR).forEach(([k,R])=>{const a=toS(R[0],R[3]),b=toS(R[2],R[1]);g.strokeStyle=COLV[k];g.lineWidth=2;g.setLineDash([6,4]);g.strokeRect(a[0],a[1],b[0]-a[0],b[1]-a[1]);g.setLineDash([]);g.fillStyle=COLV[k];g.font="bold 14px sans-serif";g.fillText(NMV[k],a[0]+4,a[1]+16);});
+  NZ.forEach((z,i)=>{const p=toS(z.x,z.y);g.strokeStyle=z.on?"#e5704d":"#666";g.lineWidth=2.5;g.beginPath();g.arc(p[0],p[1],Math.max(8,z.pcd/2*view.s),0,7);g.stroke();g.fillStyle="#e5704d";g.font="bold 12px sans-serif";g.fillText(`${i+1}:${z.sz}A`,p[0]+8,p[1]-8);});
+  if(drag&&drag.r){const a=toS(Math.min(drag.r[0],drag.r[2]),Math.max(drag.r[1],drag.r[3])),b=toS(Math.max(drag.r[0],drag.r[2]),Math.min(drag.r[1],drag.r[3]));g.strokeStyle=COLV[mode]||"#fff";g.lineWidth=1.5;g.strokeRect(a[0],a[1],b[0]-a[0],b[1]-a[1]);}}
+// 操作：1本指（マウス）＝囲む（ボタン選択中）／移動、2本指＝ズーム、ホイール＝ズーム
+const pts=new Map();let pinch=null;
+function bindCanvas(){const c=cv();
+  c.addEventListener("pointerdown",e=>{c.setPointerCapture(e.pointerId);pts.set(e.pointerId,[e.offsetX,e.offsetY]);if(pts.size===2){const [a,b]=[...pts.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),m:[(a[0]+b[0])/2,(a[1]+b[1])/2],s:view.s,ox:view.ox,oy:view.oy};drag=null;return;}
+    if(mode){const w=toW(e.offsetX,e.offsetY);drag={r:[w[0],w[1],w[0],w[1]]};}else drag={pan:[e.offsetX,e.offsetY,view.ox,view.oy]};});
+  c.addEventListener("pointermove",e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,[e.offsetX,e.offsetY]);
+    if(pinch&&pts.size===2){const [a,b]=[...pts.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]),m=[(a[0]+b[0])/2,(a[1]+b[1])/2],k=d/pinch.d;view.s=pinch.s*k;view.ox=m[0]-(pinch.m[0]-pinch.ox)*k;view.oy=m[1]-(pinch.m[1]-pinch.oy)*k;paint();return;}
+    if(!drag)return;if(drag.pan){view.ox=drag.pan[2]+e.offsetX-drag.pan[0];view.oy=drag.pan[3]+e.offsetY-drag.pan[1];}else{const w=toW(e.offsetX,e.offsetY);drag.r[2]=w[0];drag.r[3]=w[1];}paint();});
+  const up=e=>{pts.delete(e.pointerId);if(pts.size<2)pinch=null;if(drag&&drag.r&&mode){const r=drag.r,R=[Math.min(r[0],r[2]),Math.min(r[1],r[3]),Math.max(r[0],r[2]),Math.max(r[1],r[3])];if((R[2]-R[0])*view.s>12&&(R[3]-R[1])*view.s>12){VR[mode]=R;const nx={P:"F",F:"S",S:null}[mode];setMode(VR[nx]?null:nx);analyze();}}drag=null;paint();};
+  c.addEventListener("pointerup",up);c.addEventListener("pointercancel",up);
+  c.addEventListener("wheel",e=>{e.preventDefault();const k=Math.exp(-e.deltaY*0.0015);view.ox=e.offsetX-(e.offsetX-view.ox)*k;view.oy=e.offsetY-(e.offsetY-view.oy)*k;view.s*=k;paint();},{passive:false});}
+function setMode(m){mode=m;W.querySelectorAll("[data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===m));$("impHint").textContent=m?`${NMV[m]}をドラッグで囲む`:"指1本で移動・2本でズーム。ボタンを押すと囲める";}
+// 囲みからはみ出す線は囲みで切って使う（少し小さく囲っても外形が欠けないように）
+const clipR=(s,R)=>{let [x1,y1,x2,y2]=s,t0=0,t1=1;const dx=x2-x1,dy=y2-y1;for(const [p,q] of [[-dx,x1-R[0]],[dx,R[2]-x1],[-dy,y1-R[1]],[dy,R[3]-y1]]){if(p===0){if(q<0)return null;}else{const r=q/p;if(p<0){if(r>t1)return null;if(r>t0)t0=r;}else{if(r<t0)return null;if(r<t1)t1=r;}}}
+  return [x1+dx*t0,y1+dy*t0,x1+dx*t1,y1+dy*t1,s[4],s[5]];};
+const inRegion=(segs,R)=>{const o=[];segs.forEach(s=>{const c=clipR(s,R);if(c)o.push(c);});return o;};
+function analyze(){if(!DX)return;const S={};Object.entries(VR).forEach(([k,R])=>{const sg=inRegion(DX.segs,R);S[k]=silhouette(sg,R,260);if(S[k]){S[k].segs=sg;S[k].circ=DX.circ.filter(c=>c[0]>=R[0]&&c[0]<=R[2]&&c[1]>=R[1]&&c[1]<=R[3]);}});RES={S};window.__impS=S;
+  const sl=$("impSL").checked;
+  if(S.F){$("impW_").value=Math.round(S.F.x1-S.F.x0);$("impH_").value=Math.round(S.F.y1-S.F.y0);}
+  if(S.S){$("impD_").value=Math.round(S.S.x1-S.S.x0);if(!S.F)$("impH_").value=Math.round(S.S.y1-S.S.y0);}
+  if(S.P){$("impW_").value=Math.round(S.P.x1-S.P.x0);$("impD_").value=Math.round(S.P.y1-S.P.y0);} // 三面で食い違うときは平面に合わせる
+  // フランジ：正面→−y（手前）、側面→+x（右）／左側面なら−x、平面→+z（上）
+  NZ=[];[["F",[0,-1,0]],["S",[sl?-1:1,0,0]],["P",[0,0,1]]].forEach(([k,dir])=>{if(!VR[k]||!S[k])return;findFlanges(DX.circ,VR[k]).forEach(f=>{const Sx=S[k];const u=(f.x-Sx.x0)/Math.max(1,Sx.x1-Sx.x0),v=(f.y-Sx.y0)/Math.max(1,Sx.y1-Sx.y0);if(u<-0.05||u>1.05||v<-0.05||v>1.05)return;NZ.push(Object.assign(f,{k,u,v,dir,on:true,nm:""}));});});
+  NZ.forEach((z,i)=>z.nm=`接続口${i+1}`);listNz();paint();}
+function listNz(){$("impNz").innerHTML=NZ.length?`<table>${NZ.map((z,i)=>`<tr><td><input type="checkbox" data-i="${i}" ${z.on?"checked":""} style="width:auto"></td><td><input data-nm="${i}" value="${esc(z.nm)}"></td><td style="width:64px"><input data-sz="${i}" type="number" value="${z.sz}"></td><td style="white-space:nowrap">${NMV[z.k]}</td></tr>`).join("")}</table><div class="mut">口径はボルト中心円径 ${NZ.map(z=>z.pcd).join("・")}mm から（JIS 10K）</div>`:`<span class="mut">${Object.keys(VR).length?"フランジ（ボルト孔の円並び）が見つからんかった。置いた後に足せる":"三面を囲むと探す"}</span>`;
+  $("impNz").querySelectorAll("[data-i]").forEach(b=>b.onchange=()=>{NZ[+b.dataset.i].on=b.checked;paint();});
+  $("impNz").querySelectorAll("[data-nm]").forEach(b=>b.oninput=()=>{NZ[+b.dataset.nm].nm=b.value;});
+  $("impNz").querySelectorAll("[data-sz]").forEach(b=>b.onchange=()=>{NZ[+b.dataset.sz].sz=+b.value;});}
+// ---------- 部品ごとに起こす：円→円柱（他の2面で接線の位置と長さを拾う）、四角い面→箱（他の面の四角と幅をそろえる）。外形の重ね合わせ（ハル）で検算 ----------
+function parts(S,C,W,D,H,sl){const M_={};
+  // 各面の座標→実寸（機器中心がx・y=0、z=0が下端）
+  const mk=(Sx,hu,hv)=>{if(!Sx)return null;const su=hu/Math.max(1,Sx.x1-Sx.x0),sv=hv/Math.max(1,Sx.y1-Sx.y0);return {Sx,su,sv,u:a=>(a-Sx.x0)*su,v:b=>(b-Sx.y0)*sv};};
+  const F=mk(S.F,W,H),P=mk(S.P,W,D),Sd=mk(S.S,D,H);
+  const X=a=>a-W/2,Y=a=>a-D/2,sideU=a=>sl?D-a:a;
+  // 面の軸平行線（実寸）：hz＝横線（vが一定）、vt＝縦線（uが一定）
+  const lines=(V,cl)=>{if(!V)return {hz:[],vt:[]};const hz=[],vt=[];V.Sx.segs.forEach(s=>{if(!!s[5]!==!!cl)return;const dx=s[2]-s[0],dy=s[3]-s[1],L=Math.hypot(dx,dy);if(L<1)return;
+      if(Math.abs(dy)<L*0.03)hz.push([V.v((s[1]+s[3])/2),Math.min(V.u(s[0]),V.u(s[2])),Math.max(V.u(s[0]),V.u(s[2]))]);
+      else if(Math.abs(dx)<L*0.03)vt.push([V.u((s[0]+s[2])/2),Math.min(V.v(s[1]),V.v(s[3])),Math.max(V.v(s[1]),V.v(s[3]))]);});return {hz,vt};};
+  const LF=lines(F),LP=lines(P),LS=lines(Sd),CF=lines(F,1),CP=lines(P,1),CS=lines(Sd,1);
+  const ivs=(L,c,tol)=>{const a=L.filter(l=>Math.abs(l[0]-c)<=tol).map(l=>[l[1],l[2]]).sort((p,q)=>p[0]-q[0]),o=[];a.forEach(x=>{const t=o[o.length-1];if(t&&x[0]<=t[1]+tol)t[1]=Math.max(t[1],x[1]);else o.push(x.slice());});return o;};
+  const isect=(A,B)=>{const o=[];A.forEach(a=>B.forEach(b=>{const l=Math.max(a[0],b[0]),h=Math.min(a[1],b[1]);if(h-l>6)o.push([l,h]);}));return o;};
+  const both=(L,c,r,tol)=>isect(ivs(L,c-r,tol),ivs(L,c+r,tol));
+  // ハル（三面の外形を重ねた立体）の中か
+  const inHull=(x,y,z)=>{const i=Math.floor((x+W/2)/W*C.nx),j=Math.floor((y+D/2)/D*C.ny),k=Math.floor(z/H*C.nz);if(i<0||j<0||k<0||i>=C.nx||j>=C.ny||k>=C.nz)return 0;return C.V[(k*C.ny+j)*C.nx+i];};
+  const fracIn=pts=>pts.reduce((s2,p)=>s2+inHull(...p),0)/pts.length;
+  const cyls=[],boxes=[],tol=Math.max(W,D,H)/120+3;
+  const cylPts=(A,B,r,ax)=>{const o=[];for(let t=0;t<=4;t++){const c=A.map((v,k)=>v+(B[k]-v)*(0.1+0.8*t/4));[[0,0],[0.6,0],[-0.6,0],[0,0.6],[0,-0.6]].forEach(([a,b])=>{const d=ax===0?[0,a*r,b*r]:ax===1?[a*r,0,b*r]:[a*r,b*r,0];o.push(c.map((v,k)=>v+d[k]));});}return o;};
+  const addCyl=(A,B,r,ax)=>{if(r<12)return;if(fracIn(cylPts(A,B,r,ax))<0.8)return;if(cyls.some(c=>c.ax===ax&&Math.abs(c.r-r)<3&&Math.hypot(...A.map((v,k)=>v-c.a[k]))<6&&Math.hypot(...B.map((v,k)=>v-c.b[k]))<6))return;cyls.push({a:A,b:B,r,ax});};
+  // 正面の円 → 奥行方向（y）の円柱
+  if(F)F.Sx.circ.forEach(c=>{const x=F.u(c[0]),z=F.v(c[1]),r=c[2]*F.su;let I=[];if(P)I=I.concat(both(LP.vt,x,r,tol));if(Sd){const J=both(LS.hz,z,r,tol).map(q=>sl?[D-q[1],D-q[0]]:q);I=I.concat(J);}
+    I.forEach(q=>addCyl([X(x),Y(q[0]),z],[X(x),Y(q[1]),z],r,1));});
+  // 平面の円 → 高さ方向（z）
+  if(P)P.Sx.circ.forEach(c=>{const x=P.u(c[0]),y=P.v(c[1]),r=c[2]*P.su;let I=[];if(F)I=I.concat(both(LF.vt,x,r,tol));if(Sd)I=I.concat(both(LS.vt,sideU(y)-(sl?0:0),r,tol));
+    I.forEach(q=>addCyl([X(x),Y(y),q[0]],[X(x),Y(y),q[1]],r,2));});
+  // 側面の円 → 幅方向（x）
+  if(Sd)Sd.Sx.circ.forEach(c=>{const y=sideU(Sd.u(c[0])),z=Sd.v(c[1]),r=c[2]*Sd.su;let I=[];if(F)I=I.concat(both(LF.hz,z,r,tol));if(P)I=I.concat(both(LP.hz,y,r,tol));
+    I.forEach(q=>addCyl([X(q[0]),Y(y),z],[X(q[1]),Y(y),z],r,0));});
+  // 四角い面どうしを合わせて箱に
+  const RF=F?F.Sx.rects.map(r=>[F.u(r[0]),F.v(r[1]),F.u(r[2]),F.v(r[3])]):[],RP=P?P.Sx.rects.map(r=>[P.u(r[0]),P.v(r[1]),P.u(r[2]),P.v(r[3])]):[],RS=Sd?Sd.Sx.rects.map(r=>{const a=sideU(Sd.u(r[0])),b=sideU(Sd.u(r[2]));return [Math.min(a,b),Sd.v(r[1]),Math.max(a,b),Sd.v(r[3])];}):[];
+  const eq=(a,b)=>Math.abs(a-b)<=tol*1.5;
+  const boxPts=(x0,y0,z0,x1,y1,z1)=>{const o=[];for(let a=0;a<3;a++)for(let b=0;b<3;b++)for(let c=0;c<3;c++)o.push([x0+(x1-x0)*(0.15+0.35*a),y0+(y1-y0)*(0.15+0.35*b),z0+(z1-z0)*(0.15+0.35*c)]);return o;};
+  const addBox=(x0,y0,z0,x1,y1,z1)=>{if(x1-x0<8||y1-y0<8||z1-z0<8)return;const b=[X(x0),Y(y0),z0,X(x1),Y(y1),z1];if(fracIn(boxPts(...b))<0.85)return;if(boxes.some(q=>q.every((v,k)=>Math.abs(v-b[k])<tol)))return;boxes.push(b.map(Math.round));};
+  RF.forEach(f=>{RP.forEach(p=>{if(eq(f[0],p[0])&&eq(f[2],p[2]))addBox(f[0],p[1],f[1],f[2],p[3],f[3]);});RS.forEach(s2=>{if(eq(f[1],s2[1])&&eq(f[3],s2[3]))addBox(f[0],s2[0],f[1],f[2],s2[2],f[3]);});});
+  RP.forEach(p=>RS.forEach(s2=>{if(eq(p[1],s2[0])&&eq(p[3],s2[2]))addBox(p[0],p[1],s2[1],p[2],p[3],s2[3]);}));
+  // 箱のうち、軸方向に中心線が通ってて断面が丸っぽい（縦横ほぼ同じ）ものは円柱（モーター・タンク等）。中心線＝円柱の印
+  const hasCL=(L,c,a0,a1)=>L.some(l=>Math.abs(l[0]-c)<=tol&&Math.min(l[2],a1)-Math.max(l[1],a0)>(a1-a0)*0.5);
+  for(let n=boxes.length-1;n>=0;n--){const b=boxes[n],sx=b[3]-b[0],sy=b[4]-b[1],sz=b[5]-b[2],cx=(b[0]+b[3])/2+W/2,cy=(b[1]+b[4])/2+D/2,cz=(b[2]+b[5])/2;let ax=-1;
+    const rnd=(p_,q_)=>Math.abs(p_-q_)<=Math.max(p_,q_)*0.18;
+    // y軸：平面の縦の中心線（x＝cx）・側面の横の中心線（z＝cz）
+    if(rnd(sx,sz)){const e1=P?hasCL(CP.vt,cx,b[1]+D/2,b[4]+D/2):null,e2=Sd?hasCL(CS.hz,cz,sl?D-(b[4]+D/2):b[1]+D/2,sl?D-(b[1]+D/2):b[4]+D/2):null;if(e1||e2)ax=1;}
+    if(ax<0&&rnd(sy,sz)){const e1=F?hasCL(CF.hz,cz,b[0]+W/2,b[3]+W/2):null,e2=P?hasCL(CP.hz,cy,b[0]+W/2,b[3]+W/2):null;if(e1||e2)ax=0;}
+    if(ax<0&&rnd(sx,sy)){const e1=F?hasCL(CF.vt,cx,b[2],b[5]):null,e2=Sd?hasCL(CS.vt,sl?D-cy:cy,b[2],b[5]):null;if(e1||e2)ax=2;}
+    if(ax<0)continue;const c=[(b[0]+b[3])/2,(b[1]+b[4])/2,(b[2]+b[5])/2],o=[0,1,2].filter(q=>q!==ax),r=([sx,sy,sz][o[0]]+[sx,sy,sz][o[1]])/4,A=c.slice(),B=c.slice();A[ax]=b[ax];B[ax]=b[ax+3];
+    boxes.splice(n,1);cyls.push({a:A,b:B,r,ax});}
+  // 部品で埋まらなかったハルの残り（それなりの塊だけ）を箱で足す
+  const cov=new Uint8Array(C.V.length),cw=W/C.nx,cd=D/C.ny,ch=H/C.nz;
+  for(let k=0;k<C.nz;k++)for(let j=0;j<C.ny;j++)for(let i=0;i<C.nx;i++){const x=-W/2+(i+0.5)*cw,y=-D/2+(j+0.5)*cd,z=(k+0.5)*ch;
+    if(boxes.some(b=>x>=b[0]-cw&&x<=b[3]+cw&&y>=b[1]-cd&&y<=b[4]+cd&&z>=b[2]-ch&&z<=b[5]+ch)||cyls.some(c=>{const A=c.a,B=c.b,ax=c.ax,lo=Math.min(A[ax],B[ax])-ch,hi=Math.max(A[ax],B[ax])+ch,p=[x,y,z];if(p[ax]<lo||p[ax]>hi)return false;const o=[0,1,2].filter(q=>q!==ax);return Math.hypot(p[o[0]]-A[o[0]],p[o[1]]-A[o[1]])<=c.r+cw*1.2;}))cov[(k*C.ny+j)*C.nx+i]=1;}
+  const rest=new Uint8Array(C.V.length);for(let q=0;q<rest.length;q++)rest[q]=C.V[q]&&!cov[q]?1:0;
+  const R2=boxesOf(rest,C.nx,C.ny,C.nz,W,D,H).filter(b=>(b[3]-b[0])>=cw*2.5&&(b[4]-b[1])>=cd*2.5&&(b[5]-b[2])>=ch*2.5);
+  return {cy:cyls.map(c=>[...c.a.map(Math.round),...c.b.map(Math.round),Math.round(c.r)]),bx:boxes.concat(R2)};}
+function boxesOf(V,nx,ny,nz,W,D,H){const used=new Uint8Array(V.length),bx=[];const at=(i,j,k)=>V[(k*ny+j)*nx+i]&&!used[(k*ny+j)*nx+i];
+  for(let k=0;k<nz;k++)for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){if(!at(i,j,k))continue;let i2=i;while(i2+1<nx&&at(i2+1,j,k))i2++;
+    let j2=j;const rowOk=(jj,kk)=>{for(let x=i;x<=i2;x++)if(!at(x,jj,kk))return false;return true;};while(j2+1<ny&&rowOk(j2+1,k))j2++;
+    let k2=k;const lay=kk=>{for(let y=j;y<=j2;y++)if(!rowOk(y,kk))return false;return true;};while(k2+1<nz&&lay(k2+1))k2++;
+    for(let z=k;z<=k2;z++)for(let y=j;y<=j2;y++)for(let x=i;x<=i2;x++)used[(z*ny+y)*nx+x]=1;
+    const X=a=>Math.round(a*W/nx-W/2),Y=a=>Math.round(a*D/ny-D/2),Z=a=>Math.round(a*H/nz);bx.push([X(i),Y(j),Z(k),X(i2+1),Y(j2+1),Z(k2+1)]);}
+  return bx;}
+function build(){if(!RES)return null;const S=RES.S,Wm=+$("impW_").value,Dm=+$("impD_").value,Hm=+$("impH_").value;if(!(Wm>0&&Dm>0&&Hm>0)){$("impMsg").textContent="幅・奥行・高さを入れて";return null;}
+  const sl=$("impSL").checked,C=carve(S.P,S.F,S.S,Wm,Dm,Hm,sl,96);
+  // 接続口の位置：見えてる面の外形から
+  const vox=(i,j,k)=>C.V[(k*C.ny+j)*C.nx+i];
+  const nzl=NZ.filter(z=>z.on).map(z=>{let p;const cl=(a,n)=>Math.min(n-1,Math.max(0,Math.floor(a*n)));
+    if(z.k==="F"){const i=cl(z.u,C.nx),k=cl(z.v,C.nz);let j=0;while(j<C.ny-1&&!vox(i,j,k))j++;p=[z.u*Wm-Wm/2,j*Dm/C.ny-Dm/2,z.v*Hm];}
+    else if(z.k==="S"){const vv=sl?1-z.u:z.u,j=cl(vv,C.ny),k=cl(z.v,C.nz);if(sl){let i=0;while(i<C.nx-1&&!vox(i,j,k))i++;p=[i*Wm/C.nx-Wm/2,vv*Dm-Dm/2,z.v*Hm];}else{let i=C.nx-1;while(i>0&&!vox(i,j,k))i--;p=[(i+1)*Wm/C.nx-Wm/2,vv*Dm-Dm/2,z.v*Hm];}}
+    else{const i=cl(z.u,C.nx),j=cl(z.v,C.ny);let k=C.nz-1;while(k>0&&!vox(i,j,k))k--;p=[z.u*Wm-Wm/2,z.v*Dm-Dm/2,(k+1)*Hm/C.nz];}
+    return {nm:z.nm,sz:z.sz,conn:"fl",from:p.map(Math.round),dir:z.dir};});
+  let PT=null;if($("impPT").checked)try{PT=parts(S,C,Wm,Dm,Hm,sl);}catch(err){console.error(err);}
+  return PT?{bx:PT.bx,cy:PT.cy,nzl,W:Wm,D:Dm,H:Hm,src:$("impN").textContent}:{bx:C.bx,nzl,W:Wm,D:Dm,H:Hm,src:$("impN").textContent};}
+function pv(p){const e={id:-98,t:"imp",x:0,y:0,z:0,rot:0,lab:"",p,noz:EQT.imp.noz(p)},G=eqGeo(e),pts=[];G.P.forEach(q=>{pts.push(q.a,q.b);});G.N.forEach(n=>pts.push(n.pos));const pp=pts.map(v=>proj(v[0],v[1],v[2])),xs=pp.map(q=>q[0]),ys=pp.map(q=>q[1]);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),VW=280,VH=220,s=Math.min((VW-20)/Math.max(x1-x0,1),(VH-20)/Math.max(y1-y0,1)),ox=(VW-(x1-x0)*s)/2-x0*s,oy=(VH-(y1-y0)*s)/2-y0*s;
+  const T=w=>{const q=proj(w[0],w[1],w[2]);return [q[0]*s+ox,q[1]*s+oy];};const keep=M.eqs,ks=sel,kh=typeof EQHIT!=="undefined"?EQHIT:null;let g="";const kp=PAL;
+  try{M.eqs=[e];sel=null;PAL=palette(true);g=eqSVG(T,{print:true});}catch(err){g=`<text x="8" y="16" fill="red">${esc(err.message)}</text>`;}finally{M.eqs=keep;sel=ks;PAL=kp;if(kh)EQHIT=kh;}
+  $("impPv").innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" style="width:100%;display:block">${g}</svg>`;}
+let LASTP=null;
+$("impRun").onclick=()=>{const p=build();if(!p)return;LASTP=p;pv(p);$("impGo").disabled=false;$("impMsg").textContent=`円柱 ${(p.cy||[]).length}・箱 ${p.bx.length} 個で立体化（${p.W}×${p.D}×${p.H}）・接続口 ${p.nzl.length}`;};
+$("impGo").onclick=()=>{if(!LASTP)return;const nm=$("impNm").value.trim()||"取込機器";LASTP.nm=nm;
+  try{const L=JSON.parse(localStorage.getItem("ISO_EQLIB")||"[]");const k=L.findIndex(x=>x.nm===nm);if(k>=0)L[k]=LASTP;else L.push(LASTP);localStorage.setItem("ISO_EQLIB",JSON.stringify(L.slice(-60)));}catch(_){}
+  W.classList.remove("show");window.openEqWinImp&&window.openEqWinImp(LASTP,nm);};
+$("impX").onclick=()=>W.classList.remove("show");
+W.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>setMode(mode===b.dataset.v?null:b.dataset.v));
+$("impSL").onchange=analyze;["impW_","impD_","impH_"].forEach(id=>$(id).onchange=()=>{$("impGo").disabled=true;});
+$("impF").onchange=async ev=>{const f=ev.target.files[0];if(!f)return;$("impN").textContent=f.name;$("impNm").value=f.name.replace(/\.[^.]+$/,"").replace(/^[0-9a-f]{8}-/,"");
+  if(/\.dwg$/i.test(f.name)){$("impMsg").textContent="DWGはブラウザで読めん（Autodeskの非公開形式）。Tfas・AutoCAD・DWG TrueViewで「DXFで保存」してから選んでな";DX=null;paint();return;}
+  try{const buf=await f.arrayBuffer();const txt=decode(buf);if(!/SECTION/.test(txt.slice(0,5000)))throw new Error("バイナリDXFは未対応。ASCIIのDXFで保存して");DX=explode(parseDXF(txt));
+    VR={};NZ=[];RES=null;LASTP=null;$("impGo").disabled=true;$("impPv").innerHTML="";$("impMsg").textContent=`線 ${DX.segs.length}・円 ${DX.circ.length} を読んだ`;fit();setMode("P");listNz();paint();}
+  catch(err){$("impMsg").textContent="読めんかった："+err.message;}
+  ev.target.value="";};
+bindCanvas();addEventListener("resize",()=>{if(W.classList.contains("show"))paint();});
+window.openImport=()=>{W.classList.add("show");requestAnimationFrame(()=>{fit();paint();});};
+window.__imp={decode,parseDXF,explode,silhouette,findFlanges,carve,get DX(){return DX},set DX(v){DX=v},VR,analyze,build,fit,paint,setVR:(k,R)=>{VR[k]=R;}};
+})();
 
 </script>
 </body>
